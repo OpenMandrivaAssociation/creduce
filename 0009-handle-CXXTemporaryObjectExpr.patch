@@ -1,0 +1,43 @@
+From 4141b00556dd748eab37d96cd77eecabc5f387ca Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Sun, 13 Apr 2014 02:19:44 -0700
+Subject: [PATCH 09/27] handle CXXTemporaryObjectExpr
+
+revert previous commit - the root cause of the crash
+is CXXTemporaryObjectExpr
+---
+ clang_delta/RemoveNestedFunction.cpp | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/clang_delta/RemoveNestedFunction.cpp b/clang_delta/RemoveNestedFunction.cpp
+index 5f86677..4826594 100644
+--- a/clang_delta/RemoveNestedFunction.cpp
++++ b/clang_delta/RemoveNestedFunction.cpp
+@@ -267,6 +267,13 @@ bool RemoveNestedFunction::addNewTmpVariable(ASTContext &ASTCtx)
+     return writeNewTmpVariable(QT, VarStr);
+   }
+ 
++  if (const CXXTemporaryObjectExpr *CXXTE = 
++      dyn_cast<CXXTemporaryObjectExpr>(E)) {
++    const CXXConstructorDecl *CXXCtor = CXXTE->getConstructor();
++    QT = CXXCtor->getThisType(ASTCtx);
++    return writeNewTmpVariable(QT, VarStr);
++  }
++
+   if (const CXXDependentScopeMemberExpr *ME = 
+       dyn_cast<CXXDependentScopeMemberExpr>(E)) {
+ 
+@@ -389,10 +396,6 @@ bool RemoveNestedFunction::addNewTmpVariable(ASTContext &ASTCtx)
+     VarStr = DStr + " " + VarStr + ";";
+     return RewriteHelper->addLocalVarToFunc(VarStr, TheFuncDecl);
+   }
+-  if (const ElaboratedType *ET = dyn_cast<ElaboratedType>(CalleeType)) {
+-    QT = ET->getNamedType();
+-    return writeNewTmpVariable(QT, VarStr);
+-  }
+   //  return writeNewIntTmpVariable(VarStr);
+   QT = TheCallExpr->getCallReturnType();
+   return writeNewTmpVariable(QT, VarStr);
+-- 
+2.0.4
+

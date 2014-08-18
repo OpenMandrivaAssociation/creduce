@@ -1,0 +1,11 @@
+--- creduce/clang_delta/Makefile.am.omv~	2014-08-18 09:53:42.305394835 +0200
++++ creduce/clang_delta/Makefile.am	2014-08-18 09:53:47.513329727 +0200
+@@ -48,7 +48,7 @@ clang_delta_CXXFLAGS = \
+ clang_delta_LDADD = \
+ 	-lclangFrontendTool -lclangFrontend -lclangDriver -lclangSerialization \
+ 	-lclangCodeGen -lclangParse -lclangSema -lclangAnalysis \
+-	-lclangRewriteFrontend -lclangRewrite -lclangAST -lclangBasic -lclangEdit -lclangLex \
++	-lclangRewriteFrontend -lclangRewriteCore -lclangAST -lclangBasic -lclangEdit -lclangLex \
+ 	$(LLVMLIBS) \
+ 	$(LLVMLDFLAGS)
+ 

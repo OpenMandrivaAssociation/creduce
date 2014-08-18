@@ -1,0 +1,61 @@
+From 38890df4bca502d9a630c7c3a7c56d26a1e227a8 Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Wed, 26 Mar 2014 00:36:06 -0600
+Subject: [PATCH 04/27] keep tracking LLVM trunk
+
+Got it work with LLVM r204771.
+Thanks for Markus Trippelsdorf providing us the patch!
+---
+ clang_delta/RemoveUnusedFunction.cpp  | 5 ++---
+ clang_delta/Transformation.cpp        | 5 ++---
+ clang_delta/TransformationManager.cpp | 2 +-
+ 3 files changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/clang_delta/RemoveUnusedFunction.cpp b/clang_delta/RemoveUnusedFunction.cpp
+index f69c261..405cc50 100644
+--- a/clang_delta/RemoveUnusedFunction.cpp
++++ b/clang_delta/RemoveUnusedFunction.cpp
+@@ -654,9 +654,8 @@ RemoveUnusedFunction::lookupFunctionDeclShallow(const DeclarationName &DName,
+     }
+   }
+ 
+-  for (DeclContext::udir_iterator I = Ctx->using_directives_begin(),
+-       E = Ctx->using_directives_end(); I != E; ++I) {
+-    const NamespaceDecl *ND = (*I)->getNominatedNamespace();
++  for (auto *I : Ctx->using_directives()) {
++    const NamespaceDecl *ND = I->getNominatedNamespace();
+     // avoid infinite recursion
+     if (ND->getLookupParent() == Ctx)
+       return NULL;
+diff --git a/clang_delta/Transformation.cpp b/clang_delta/Transformation.cpp
+index 3068b14..b440f9b 100644
+--- a/clang_delta/Transformation.cpp
++++ b/clang_delta/Transformation.cpp
+@@ -579,9 +579,8 @@ const FunctionDecl *Transformation::lookupFunctionDecl(
+     }
+   }
+ 
+-  for (DeclContext::udir_iterator I = Ctx->using_directives_begin(),
+-       E = Ctx->using_directives_end(); I != E; ++I) {
+-    const NamespaceDecl *ND = (*I)->getNominatedNamespace();
++  for (auto *I : Ctx->using_directives()) {
++    const NamespaceDecl *ND = I->getNominatedNamespace();
+     // avoid infinite recursion
+     if (ND->getLookupParent() == Ctx)
+       return NULL;
+diff --git a/clang_delta/TransformationManager.cpp b/clang_delta/TransformationManager.cpp
+index b0296b5..74f0469 100644
+--- a/clang_delta/TransformationManager.cpp
++++ b/clang_delta/TransformationManager.cpp
+@@ -116,7 +116,7 @@ bool TransformationManager::initializeCompilerInstance(std::string &ErrorMsg)
+   ClangInstance->setTarget(Target);
+   ClangInstance->createFileManager();
+   ClangInstance->createSourceManager(ClangInstance->getFileManager());
+-  ClangInstance->createPreprocessor();
++  ClangInstance->createPreprocessor(TU_Complete);
+ 
+   DiagnosticConsumer &DgClient = ClangInstance->getDiagnosticClient();
+   DgClient.BeginSourceFile(ClangInstance->getLangOpts(),
+-- 
+2.0.4
+

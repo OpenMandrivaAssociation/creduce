@@ -1,0 +1,153 @@
+--- creduce/clang_delta/RemoveNestedFunction.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/RemoveNestedFunction.cpp	2014-08-18 10:00:29.210307823 +0200
+@@ -268,7 +268,7 @@ bool RemoveNestedFunction::addNewTmpVari
+     if (!FD)
+       return writeNewIntTmpVariable(VarStr);
+ 
+-    QT = FD->getResultType();
++    QT = FD->getReturnType();
+     //FIXME: This is actually not quite correct, we should get the instantiated
+     // type here.
+     return writeNewTmpVariable(QT, VarStr);
+@@ -281,7 +281,7 @@ bool RemoveNestedFunction::addNewTmpVari
+     const FunctionDecl *FD = lookupFunctionDecl(DName, CXXRD, VisitedCtxs);
+     // FIXME: try to resolve FD here
+     if (FD)
+-      QT = FD->getResultType();
++      QT = FD->getReturnType();
+     return writeNewTmpVariable(QT, VarStr);
+   }
+ 
+@@ -323,7 +323,7 @@ bool RemoveNestedFunction::addNewTmpVari
+       DeclContextSet VisitedCtxs;
+       const FunctionDecl *FD = lookupFunctionDecl(DName, Ctx, VisitedCtxs);
+       TransAssert(FD && "Cannot resolve DName!");
+-      QT = FD->getResultType();
++      QT = FD->getReturnType();
+       return writeNewTmpVariable(QT, VarStr);
+     }
+     
+@@ -336,7 +336,7 @@ bool RemoveNestedFunction::addNewTmpVari
+       if (!FD) {
+         return writeNewTmpVariable(QT, VarStr);
+       }
+-      QT = FD->getResultType();
++      QT = FD->getReturnType();
+       const Type *RVTy = QT.getTypePtr();
+       if (RVTy->getAs<InjectedClassNameType>()) {
+         // handle cases like:
+--- creduce/clang_delta/RenameCXXMethod.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/RenameCXXMethod.cpp	2014-08-18 09:59:25.245107499 +0200
+@@ -643,7 +643,7 @@ const FunctionDecl* RenameCXXMethod::get
+       return NULL;
+   }
+ 
+-  const Type *Ty = FD->getResultType().getTypePtr();
++  const Type *Ty = FD->getReturnType().getTypePtr();
+   return getFunctionDeclFromType(Ty, DName);
+ }
+ 
+@@ -668,7 +668,7 @@ const FunctionDecl* RenameCXXMethod::get
+     const CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(VD);
+     if (!MD)
+       return NULL;
+-    const Type *Ty = MD->getResultType().getTypePtr();
++    const Type *Ty = MD->getReturnType().getTypePtr();
+     return getFunctionDeclFromType(Ty, DName);
+   }
+   else if (const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(CalleeExpr)) {
+@@ -676,7 +676,7 @@ const FunctionDecl* RenameCXXMethod::get
+     const CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(VD);
+     if (!MD)
+       return NULL;
+-    const Type *Ty = MD->getResultType().getTypePtr();
++    const Type *Ty = MD->getReturnType().getTypePtr();
+     return getFunctionDeclFromType(Ty, DName);
+   }
+   else if (const OverloadExpr *OE = dyn_cast<OverloadExpr>(CalleeExpr)) {
+@@ -704,7 +704,7 @@ const FunctionDecl* RenameCXXMethod::get
+     const FunctionDecl *FD = getFunctionDecl(DE);
+     if (!FD)
+       return NULL;
+-    const Type *Ty = FD->getResultType().getTypePtr();
++    const Type *Ty = FD->getReturnType().getTypePtr();
+     // Note that it's not always true that we could get a 
+     // non-null function here, e.g.:
+     // template <typename T> class A {
+--- creduce/clang_delta/ReplaceCallExpr.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/ReplaceCallExpr.cpp	2014-08-18 09:59:25.245107499 +0200
+@@ -151,7 +151,7 @@ bool ReplaceCallExprVisitor::VisitCallEx
+   // Because CE->getCallReturnType() fails on builtin functions,
+   // try to get returntype from FD (probably not really accurate thought)
+   if (FD->getBuiltinID())
+-    T = FD->getResultType().getTypePtr();
++    T = FD->getReturnType().getTypePtr();
+   else 
+     T = CE->getCallReturnType().getTypePtr();
+   if (T->isVoidType())
+--- creduce/clang_delta/ReturnVoid.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/ReturnVoid.cpp	2014-08-18 09:59:25.245107499 +0200
+@@ -119,7 +119,7 @@ bool ReturnVoid::isNonVoidReturnFunction
+   SourceLocation SLoc = TLoc.getBeginLoc();
+   if (SLoc.isInvalid())
+     return false;
+-  QualType RVType = FD->getResultType();
++  QualType RVType = FD->getReturnType();
+   return !(RVType.getTypePtr()->isVoidType());
+ }
+ 
+--- creduce/clang_delta/SimpleInliner.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/SimpleInliner.cpp	2014-08-18 09:59:25.245107499 +0200
+@@ -388,7 +388,7 @@ std::string SimpleInliner::getNewTmpName
+ 
+ void SimpleInliner::createReturnVar(void)
+ {
+-  const Type *FDType = CurrentFD->getResultType().getTypePtr();
++  const Type *FDType = CurrentFD->getReturnType().getTypePtr();
+   const Type *CallExprType = TheCallExpr->getCallReturnType().getTypePtr();
+ 
+   // We don't need tmp var
+@@ -398,7 +398,7 @@ void SimpleInliner::createReturnVar(void
+ 
+   TmpVarName = getNewTmpName();
+   std::string VarStr = TmpVarName;
+-  CurrentFD->getResultType().getAsStringInternal(VarStr, 
++  CurrentFD->getReturnType().getAsStringInternal(VarStr, 
+                                Context->getPrintingPolicy());
+   VarStr += ";";
+   RewriteHelper->addLocalVarToFunc(VarStr, TheCaller);
+--- creduce/clang_delta/SimplifyStructUnionDecl.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/SimplifyStructUnionDecl.cpp	2014-08-18 09:59:25.246107486 +0200
+@@ -52,7 +52,7 @@ private:
+ 
+ bool SimplifyStructUnionDeclVisitor::VisitFunctionDecl(FunctionDecl *FD)
+ {
+-  const Type *T = FD->getResultType().getTypePtr();
++  const Type *T = FD->getReturnType().getTypePtr();
+   return ConsumerInstance->handleOneDeclarator(T);
+ }
+ 
+--- creduce/clang_delta/TransformationManager.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/TransformationManager.cpp	2014-08-18 09:59:25.246107486 +0200
+@@ -164,8 +164,8 @@ llvm::raw_ostream *TransformationManager
+     return &(llvm::outs());
+ 
+   std::string Err;
+-  llvm::raw_fd_ostream *Out = 
+-    new llvm::raw_fd_ostream(OutputFileName.c_str(), Err);
++  llvm::raw_fd_ostream *Out = new llvm::raw_fd_ostream(
++      OutputFileName.c_str(), Err, llvm::sys::fs::F_RW);
+   assert(Err.empty() && "Cannot open output file!");
+   return Out;
+ }
+--- creduce/clang_delta/UnionToStruct.cpp.0001~	2014-08-15 17:06:37.000000000 +0200
++++ creduce/clang_delta/UnionToStruct.cpp	2014-08-18 09:59:25.246107486 +0200
+@@ -67,7 +67,7 @@ private:
+ 
+ bool UnionToStructCollectionVisitor::VisitFunctionDecl(FunctionDecl *FD)
+ {
+-  const Type *T = FD->getResultType().getTypePtr();
++  const Type *T = FD->getReturnType().getTypePtr();
+   ConsumerInstance->addOneDeclarator(FD, T);
+   return true;
+ }
