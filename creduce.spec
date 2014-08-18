@@ -23,6 +23,7 @@ URL: http://embed.cs.utah.edu/creduce/
 License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel clang-devel
+BuildRequires: flex
 Requires: clang
 Requires: flex
 Requires: astyle
