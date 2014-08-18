@@ -22,7 +22,7 @@ Summary: Tool for creating reduced test cases for compiler bugs
 URL: http://embed.cs.utah.edu/creduce/
 License: BSD
 Group: Development/Tools
-BuildRequires: llvm-devel
+BuildRequires: llvm-devel clang-devel
 Requires: clang
 Requires: flex
 Requires: astyle
