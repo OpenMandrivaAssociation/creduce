@@ -2,7 +2,7 @@
 
 Name: creduce
 Version: 2.2.0
-Release: %{?git:0.%{git}.}1
+Release: %{?git:0.%{git}.}2
 %if %{git}
 Source0: %{name}-%{git}.tar.xz
 %else
@@ -40,10 +40,11 @@ report bugs in compilers and other tools that process C/C++ code.
 %prep
 %setup -qn %{name}
 %apply_patches
+
+%build
 autoreconf -fi
 %configure
 
-%build
 %make
 
 %install
