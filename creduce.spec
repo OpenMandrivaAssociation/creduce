@@ -9,8 +9,7 @@ Source0: %{name}-%{git}.tar.xz
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 # From llvm-svn-compatible branch
-Patch1: 0009-handle-CXXTemporaryObjectExpr.patch
-Patch2:	creduce-compile-with-llvm-3.6.patch
+Patch1:	creduce-compile-with-llvm-3.6.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce/tree/llvm-svn-compatible
 URL: http://embed.cs.utah.edu/creduce/
