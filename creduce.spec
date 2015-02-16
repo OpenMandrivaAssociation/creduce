@@ -1,9 +1,9 @@
-%define git 0
+%define git %{nil}
 
 Name: creduce
 Version: 2.2.1
 Release: %{?git:0.%{git}.}1
-%if %{git}
+%if 0%{git}
 Source0: %{name}-%{git}.tar.xz
 %else
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
@@ -32,7 +32,7 @@ same property. It is intended for use by people who discover and
 report bugs in compilers and other tools that process C/C++ code.
 
 %prep
-%if %{git}
+%if 0%{git}
 %setup -qn %{name}
 %else
 %setup -q
