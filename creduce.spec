@@ -1,22 +1,18 @@
-%define git 20140818
+%define git 0
 
 Name: creduce
-Version: 2.2.0
-Release: %{?git:0.%{git}.}2
+Version: 2.2.1
+Release: %{?git:0.%{git}.}1
 %if %{git}
 Source0: %{name}-%{git}.tar.xz
 %else
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 # From llvm-svn-compatible branch
-Patch0: 0002-update-with-respect-to-clang-s-api-changes.patch
-Patch1: 0004-keep-tracking-LLVM-trunk.patch
-Patch2: 0008-fixed-one-more-crash.patch
 Patch3: 0009-handle-CXXTemporaryObjectExpr.patch
-Patch4: 0016-Fixed-an-LLVM-API-breakage.patch
-Patch5: 0027-Fixed-an-API-compatibility-issue.patch
 # Also needed
 Patch6: creduce-compile-with-llvm-3.5.patch
+Patch7:	creduce-compile-with-llvm-3.6.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce/tree/llvm-svn-compatible
 URL: http://embed.cs.utah.edu/creduce/
@@ -38,7 +34,12 @@ same property. It is intended for use by people who discover and
 report bugs in compilers and other tools that process C/C++ code.
 
 %prep
+%if %{git}
 %setup -qn %{name}
+%else
+%setup -q
+%endif
+
 %apply_patches
 
 %build
