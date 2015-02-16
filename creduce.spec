@@ -2,10 +2,11 @@
 
 Name: creduce
 Version: 2.2.1
-Release: %{?git:0.%{git}.}1
 %if 0%{git}
+Release: 0.%{git}.1
 Source0: %{name}-%{git}.tar.xz
 %else
+Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 # From llvm-svn-compatible branch
