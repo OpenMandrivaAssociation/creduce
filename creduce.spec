@@ -11,6 +11,7 @@ Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 Summary: Tool for creating reduced test cases for compiler bugs
 Patch0: creduce-2.3.0-clang-3.7.patch
+Patch1: creduce-2.3.0-fix-buildscripts.patch
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
 License: BSD
@@ -40,7 +41,7 @@ report bugs in compilers and other tools that process C/C++ code.
 
 %build
 autoreconf -fi
-%configure
+CXXFLAGS="%{optflags} -std=gnu++1y -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1" %configure
 
 %make
 
