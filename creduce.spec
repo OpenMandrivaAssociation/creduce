@@ -6,7 +6,7 @@ Version: 2.3.0
 Release: 0.%{git}.1
 Source0: %{name}-%{git}.tar.xz
 %else
-Release: 1
+Release: 2
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 Summary: Tool for creating reduced test cases for compiler bugs
