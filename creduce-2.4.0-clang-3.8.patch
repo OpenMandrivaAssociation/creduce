@@ -1,0 +1,11 @@
+--- creduce-2.4.0/clang_delta/TransformationManager.cpp.omv~	2016-02-29 03:36:45.681464610 +0100
++++ creduce-2.4.0/clang_delta/TransformationManager.cpp	2016-02-29 03:36:53.552441286 +0100
+@@ -147,7 +147,7 @@ bool TransformationManager::initializeCo
+   ClangInstance->setASTConsumer(
+     std::unique_ptr<ASTConsumer>(CurrentTransformationImpl));
+   Preprocessor &PP = ClangInstance->getPreprocessor();
+-  PP.getBuiltinInfo().InitializeBuiltins(PP.getIdentifierTable(),
++  PP.getBuiltinInfo().initializeBuiltins(PP.getIdentifierTable(),
+                                          PP.getLangOpts());
+ 
+   if (!ClangInstance->InitializeSourceManager(FrontendInputFile(SrcFileName, IK))) {
