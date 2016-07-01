@@ -1,18 +1,18 @@
 %define git %{nil}
 
 Name: creduce
-Version: 2.4.0
+Version: 2.5.0
 %if 0%{git}
 Release: 0.%{git}.1
 Source0: %{name}-%{git}.tar.xz
 %else
-Release: 2
+Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
-Patch0:	creduce-2.4.0-clang-3.8.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
+Patch0: https://github.com/csmith-project/creduce/commit/d09b8f69419d6c65c7b32675962c9aee813713b5.patch
 License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel clang-devel
