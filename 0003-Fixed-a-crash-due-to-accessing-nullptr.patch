@@ -1,0 +1,26 @@
+From efa3ee59dd98977ff50b5c02cdf9289d707c265a Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Sun, 28 May 2017 00:04:14 -0700
+Subject: [PATCH 3/3] Fixed a crash due to accessing nullptr
+
+---
+ clang_delta/RewriteUtils.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/clang_delta/RewriteUtils.cpp b/clang_delta/RewriteUtils.cpp
+index 7a78048..efc20cb 100644
+--- a/clang_delta/RewriteUtils.cpp
++++ b/clang_delta/RewriteUtils.cpp
+@@ -1580,6 +1580,9 @@ bool RewriteUtils::replaceRecordType(RecordTypeLoc &RTLoc,
+                                      const std::string &Name)
+ {
+   const IdentifierInfo *TypeId = RTLoc.getType().getBaseTypeIdentifier();
++  if (!TypeId)
++    return true;
++
+   SourceLocation LocStart = RTLoc.getLocStart();
+ 
+   // Loc could be invalid, for example:
+-- 
+2.13.0
+
