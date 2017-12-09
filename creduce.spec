@@ -1,7 +1,7 @@
-%define git %{nil}
+%define git 20171209
 
 Name: creduce
-Version: 2.7.0
+Version: 2.8.0
 %if 0%{git}
 Release: 0.%{git}.1
 Source0: %{name}-%{git}.tar.xz
@@ -9,10 +9,8 @@ Source0: %{name}-%{git}.tar.xz
 Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
-# From post-2.7.0 git
-Patch0: 0003-Fixed-a-crash-due-to-accessing-nullptr.patch
-# Submitted upstream, not yet accepted
-Patch10: creduce-2.7.0-llvm-5.0.patch
+# From llvm-svn-compatible branch
+Patch10: 0001-Fix-build-failure-with-LLVM-trunk.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
