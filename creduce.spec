@@ -1,4 +1,4 @@
-%define git 20171209
+%define git %nil
 
 Name: creduce
 Version: 2.8.0
@@ -9,8 +9,6 @@ Source0: %{name}-%{git}.tar.xz
 Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
-# From llvm-svn-compatible branch
-Patch10: 0001-Fix-build-failure-with-LLVM-trunk.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
@@ -33,9 +31,9 @@ report bugs in compilers and other tools that process C/C++ code.
 
 %prep
 %if 0%{git}
-%setup -qn %{name}
+%setup -qn %{name}-%{name}-%{version}
 %else
-%setup -q
+%setup -qn %{name}-%{name}-%{version}
 %endif
 %apply_patches
 
