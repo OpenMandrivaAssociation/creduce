@@ -14,8 +14,13 @@ Summary: Tool for creating reduced test cases for compiler bugs
 URL: http://embed.cs.utah.edu/creduce/
 License: BSD
 Group: Development/Tools
-BuildRequires: llvm-devel clang-devel
+BuildRequires: llvm-devel
+BuildRequires: clang-devel
 BuildRequires: flex
+BuildRequires: perl(File::Which)
+BuildRequires: perl(Getopt::Tabular)
+BuildRequires: perl(Regexp::Common)
+BuildRequires: perl(Term::ReadKey)
 Requires: clang
 Requires: flex
 Requires: astyle
@@ -35,16 +40,16 @@ report bugs in compilers and other tools that process C/C++ code.
 %else
 %setup -qn %{name}-%{name}-%{version}
 %endif
-%apply_patches
+%autopatch -p1
 
 %build
 autoreconf -fi
 CXXFLAGS="%{optflags} -std=gnu++1y -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1" %configure
 
-%make
+%make_build
 
 %install
-%makeinstall_std
+%make_install
 
 %files
 %{_bindir}/*
