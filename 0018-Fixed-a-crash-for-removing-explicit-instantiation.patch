@@ -1,0 +1,27 @@
+From a841921192e820d440bd51e65a1b0f5d31aeb92f Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Sat, 6 Oct 2018 00:47:31 -0700
+Subject: [PATCH 18/31] Fixed a crash for removing explicit instantiation
+
+---
+ clang_delta/RemoveUnusedFunction.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/clang_delta/RemoveUnusedFunction.cpp b/clang_delta/RemoveUnusedFunction.cpp
+index 6963ba2..747aac1 100644
+--- a/clang_delta/RemoveUnusedFunction.cpp
++++ b/clang_delta/RemoveUnusedFunction.cpp
+@@ -530,6 +530,10 @@ void RemoveUnusedFunction::removeOneExplicitInstantiation(
+   const char * const FileStartBuf = SrcManager->getCharacterData(FileStartLoc);
+ 
+   SourceLocation Loc = Spec->getPointOfInstantiation();
++  if (Loc.isInvalid()) {
++    TheRewriter.RemoveText(Spec->getSourceRange());
++    return;
++  }
+   const char *OrigStartBuf = SrcManager->getCharacterData(Loc);
+   const char *StartBuf = OrigStartBuf;
+   int Offset = 0;
+-- 
+2.21.0
+

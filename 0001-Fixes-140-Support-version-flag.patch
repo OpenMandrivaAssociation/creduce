@@ -1,0 +1,43 @@
+From 15bc038e316013bef5ad08e30cddd52cd3f846f6 Mon Sep 17 00:00:00 2001
+From: Pranav Kant <pranav913@gmail.com>
+Date: Sun, 18 Mar 2018 23:49:15 +0530
+Subject: [PATCH 01/31] Fixes #140: Support --version flag
+
+---
+ creduce/creduce.in | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/creduce/creduce.in b/creduce/creduce.in
+index f7597ee..07f55c8 100644
+--- a/creduce/creduce.in
++++ b/creduce/creduce.in
+@@ -69,8 +69,16 @@ my $NOKILL = 0;
+ my $MAX_WIN;
+ my $NO_CACHE = 0;
+ my $NOTC = 0;
++my $PKG = creduce_config::PACKAGE_STRING;
++my $COMMIT = creduce_config::GIT_VERSION;
++
++sub print_version() {
++    print "$PKG ($COMMIT)\n";
++    exit(0);
++}
+ 
+ my @options = (
++    ["--version",             "call",    0, \&print_version,   "Print the version information"] ,
+     ["--n",                   "integer", 1, \$NPROCS,          "Number of cores to use; C-Reduce tries to automatically pick a good setting but its choice may be too low or high for your situation", "<N>"],
+     ["--tidy",                "const",   1, \$TIDY,            "Do not make a backup copy of each file to reduce as file.orig"],
+     ["--shaddap",             "const",   1, \$SILENT_PASS_BUGS, "Suppress output about non-fatal internal errors"],
+@@ -95,9 +103,6 @@ my @options = (
+ );
+ 
+ @options = sort { return @{$a}[0] cmp @{$b}[0]; } @options;
+-
+-my $PKG = creduce_config::PACKAGE_STRING;
+-my $COMMIT = creduce_config::GIT_VERSION;
+ my $help = <<HELP;
+ $PKG ($COMMIT) -- a C and C++ program reducer
+ 
+-- 
+2.21.0
+

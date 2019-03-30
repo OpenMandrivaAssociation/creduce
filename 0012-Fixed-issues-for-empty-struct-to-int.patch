@@ -1,0 +1,111 @@
+From c168920bd55b906db293d06528853ab77db97015 Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Tue, 28 Aug 2018 00:17:39 -0700
+Subject: [PATCH 12/31] Fixed issues for empty-struct-to-int
+
+---
+ clang_delta/EmptyStructToInt.cpp                       |  6 ++++++
+ clang_delta/tests/empty-struct-to-int/empty-struct.cpp |  8 ++++++++
+ .../tests/empty-struct-to-int/empty-struct2.cpp        |  9 +++++++++
+ .../tests/empty-struct-to-int/empty-struct3.cpp        |  9 +++++++++
+ .../tests/empty-struct-to-int/empty-struct4.cpp        |  6 ++++++
+ .../tests/empty-struct-to-int/empty-struct5.cpp        | 10 ++++++++++
+ 6 files changed, 48 insertions(+)
+ create mode 100644 clang_delta/tests/empty-struct-to-int/empty-struct.cpp
+ create mode 100644 clang_delta/tests/empty-struct-to-int/empty-struct2.cpp
+ create mode 100644 clang_delta/tests/empty-struct-to-int/empty-struct3.cpp
+ create mode 100644 clang_delta/tests/empty-struct-to-int/empty-struct4.cpp
+ create mode 100644 clang_delta/tests/empty-struct-to-int/empty-struct5.cpp
+
+diff --git a/clang_delta/EmptyStructToInt.cpp b/clang_delta/EmptyStructToInt.cpp
+index dbffd82..29615af 100644
+--- a/clang_delta/EmptyStructToInt.cpp
++++ b/clang_delta/EmptyStructToInt.cpp
+@@ -443,6 +443,12 @@ bool EmptyStructToInt::isValidRecordDecl(const RecordDecl *RD)
+     if (!(*I)->isImplicit()) {
+       if ((*I)->isReferenced())
+         return false;
++      if (isa<CXXConstructorDecl>(*I) || isa<CXXDestructorDecl>(*I))
++        return false;
++      if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(*I)) {
++        if (FD->hasBody() && !FD->isInlined())
++          return false;
++      }
+       ++count;
+     }
+   }
+diff --git a/clang_delta/tests/empty-struct-to-int/empty-struct.cpp b/clang_delta/tests/empty-struct-to-int/empty-struct.cpp
+new file mode 100644
+index 0000000..a39adf2
+--- /dev/null
++++ b/clang_delta/tests/empty-struct-to-int/empty-struct.cpp
+@@ -0,0 +1,8 @@
++// RUN: %clang_delta --transformation=empty-struct-to-int --counter=1 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++// CHECK-NOT: struct S
++struct S {
++  void foo();
++};
++// CHECK: int s;
++S s;
+diff --git a/clang_delta/tests/empty-struct-to-int/empty-struct2.cpp b/clang_delta/tests/empty-struct-to-int/empty-struct2.cpp
+new file mode 100644
+index 0000000..25e8340
+--- /dev/null
++++ b/clang_delta/tests/empty-struct-to-int/empty-struct2.cpp
+@@ -0,0 +1,9 @@
++// RUN: %clang_delta --transformation=empty-struct-to-int --counter=1 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++// CHECK: struct S1
++struct S1 {
++// CHECK: int S;
++  struct {} S;
++// CHECK-NEXT: struct S *s1;
++  struct S *s1;
++};
+diff --git a/clang_delta/tests/empty-struct-to-int/empty-struct3.cpp b/clang_delta/tests/empty-struct-to-int/empty-struct3.cpp
+new file mode 100644
+index 0000000..9e6f016
+--- /dev/null
++++ b/clang_delta/tests/empty-struct-to-int/empty-struct3.cpp
+@@ -0,0 +1,9 @@
++// RUN: %clang_delta --transformation=empty-struct-to-int --counter=2 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++// CHECK: struct S1
++struct S1 {
++// CHECK: struct {} S;
++  struct {} S;
++// CHECK-NEXT: int *s1;
++  struct S *s1;
++};
+diff --git a/clang_delta/tests/empty-struct-to-int/empty-struct4.cpp b/clang_delta/tests/empty-struct-to-int/empty-struct4.cpp
+new file mode 100644
+index 0000000..fbf6237
+--- /dev/null
++++ b/clang_delta/tests/empty-struct-to-int/empty-struct4.cpp
+@@ -0,0 +1,6 @@
++// RUN: %clang_delta --transformation=empty-struct-to-int --counter=1 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++// CHECK: int g, i;
++struct S {} g, i;
++// CHECK: int s;
++S s;
+diff --git a/clang_delta/tests/empty-struct-to-int/empty-struct5.cpp b/clang_delta/tests/empty-struct-to-int/empty-struct5.cpp
+new file mode 100644
+index 0000000..ccb1a3b
+--- /dev/null
++++ b/clang_delta/tests/empty-struct-to-int/empty-struct5.cpp
+@@ -0,0 +1,10 @@
++// RUN: %clang_delta --transformation=empty-struct-to-int --counter=1 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++// CHECK-NOT: struct S2
++struct S2 {
++// CHECK-NOT: int a[2]
++  char a[2];
++// CHECK-NOT: };
++};
++// CHECK: int s
++S2 s = {{1,2}};
+-- 
+2.21.0
+

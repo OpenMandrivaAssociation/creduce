@@ -1,0 +1,395 @@
+From 68dbcdd0350db747990a6f7945222b143ac777ec Mon Sep 17 00:00:00 2001
+From: John Regehr <regehr@cs.utah.edu>
+Date: Fri, 22 Feb 2019 22:18:35 -0700
+Subject: [PATCH 28/31] convert to markdown
+
+---
+ INSTALL => INSTALL.md | 187 ++++++++++++++++++++++--------------------
+ README => README.md   |  43 ++++------
+ 2 files changed, 115 insertions(+), 115 deletions(-)
+ rename INSTALL => INSTALL.md (51%)
+ rename README => README.md (52%)
+
+diff --git a/INSTALL b/INSTALL.md
+similarity index 51%
+rename from INSTALL
+rename to INSTALL.md
+index 8bca8d2..be38721 100644
+--- a/INSTALL
++++ b/INSTALL.md
+@@ -1,17 +1,18 @@
+--*- mode: Text -*-
++# Installing C-Reduce
+ 
+---------------------------------------------------------------------
+-
+-C-Reduce
++## Using a Package Manager
+ 
+ Before compiling C-Reduce yourself, you might want to see if your OS
+ comes with a precompiled package for C-Reduce.  Ubuntu, Debian, Gentoo,
+ and Mac OS X (Homebrew) all do.  For example, on OS X:
+ 
++```
+ $ brew install creduce
++```
++
++## From Source
+ 
+---------------------------------------------------------------------
+-Prereqs:
++### Prereqs
+ 
+ C-Reduce is written in Perl, C++, and C.  To compile and run C-Reduce,
+ you will need a development environment that supports these languages.
+@@ -23,84 +24,80 @@ third-party software packages, including LLVM.
+ On Ubuntu or Mint, the prerequisites other than LLVM can be installed
+ like this:
+ 
+-  sudo apt-get install \
+-    libexporter-lite-perl libfile-which-perl libgetopt-tabular-perl \
+-    libregexp-common-perl flex build-essential \
+-    zlib1g-dev
++```
++sudo apt-get install \
++  libexporter-lite-perl libfile-which-perl libgetopt-tabular-perl \
++  libregexp-common-perl flex build-essential zlib1g-dev
++```
+ 
+-On OS X, Perlbrew provides an easy and flexible way to get Perl and
+-Perl modules installed:
+-
+-  http://perlbrew.pl/
++On OS X, [Perlbrew](http://perlbrew.pl/) provides an easy and flexible
++way to get Perl and Perl modules installed
+ 
+ On FreeBSD 10.3 and 11.1, the prerequisites can be installed like this:
+ 
+-  sudo pkg install \
+-    llvm60 \
+-    p5-Exporter-Lite p5-File-Which p5-Getopt-Tabular p5-Regexp-Common \
+-    flex
++```
++sudo pkg install \
++  llvm60 flex p5-Exporter-Lite p5-File-Which p5-Getopt-Tabular p5-Regexp-Common
++```
+ 
+ Otherwise, install these packages either manually or using the package
+ manager:
+ 
+-Flex:
+-  http://flex.sourceforge.net/
++* [Flex](http://flex.sourceforge.net/)
+ 
+-LLVM/Clang 6.0.0:
+-  http://llvm.org/releases/download.html#6.0.0
+-  (No need to compile it: the appropriate "Clang binaries" package is
+-  all you need.  If you use one of the binary packages, you may need to
+-  install additional packages that the binary package depends on.  For
+-  example, the "Clang for x86_64 Ubuntu 14.04" binary package depends
+-  on "libtinfo5".  You may need to install this, e.g.:
+-  "sudo apt-get install libtinfo-dev".)
++* [LLVM/Clang 6.0.0](http://llvm.org/releases/download.html#6.0.0)
+ 
+-Perl modules:
+-  Exporter::Lite
+-  File::Which
+-  Getopt::Tabular
+-  Regexp::Common
++  (No need to compile it: the appropriate "Clang binaries" package is
++  all you need.  If you use one of the binary packages, you may need
++  to install additional packages that the binary package depends on.
++  For example, the "Clang for x86_64 Ubuntu 14.04" binary package
++  depends on "libtinfo5".  You may need to install this, e.g.: "sudo
++  apt-get install libtinfo-dev".)
+ 
+-For example, (perhaps as root):
+-  cpan -i 'Exporter::Lite'
+-  cpan -i 'File::Which'
+-  cpan -i 'Getopt::Tabular'
+-  cpan -i 'Regexp::Common'
++* Perl modules:
++  - Exporter::Lite
++  - File::Which
++  - Getopt::Tabular
++  - Regexp::Common
++  - For example, (perhaps as root) `cpan -i Exporter::Lite File::Which Getopt::Tabular Regexp::Common`
+ 
+-zlib:
+-  http://www.zlib.net/
++* [zlib](http://www.zlib.net/)
+ 
+---------------------------------------------------------------------
+-Optional prereqs:
++### Optional Prereqs
+ 
+-Term::ReadKey is optional; C-Reduce will use it if it is installed.
++`Term::ReadKey` is optional; C-Reduce will use it if it is installed.
+ 
+ On Ubuntu:
+ 
+-  sudo apt-get install libterm-readkey-perl
++```
++sudo apt-get install libterm-readkey-perl
++```
+ 
+ On OS X (with Homebrew + Perlbrew installed):
+ 
+-  cpan -i 'Term::ReadKey'
++```
++cpan -i Term::ReadKey
++```
+ 
+ On FreeBSD 10.3:
+ 
+-  sudo pkg install p5-Term-ReadKey
++```
++sudo pkg install p5-Term-ReadKey
++```
+ 
+ Otherwise, install the packages either manually or using the package
+ manager.
+ 
+---------------------------------------------------------------------
+-Building and installing C-Reduce:
++## Building and installing C-Reduce
+ 
+ You can configure, build, and install C-Reduce with the provided
+-`configure' script or with CMake.
++`configure` script or with CMake.
+ 
+-* Preface: If in Doubt, Compile With `clang++'
++### Preface: If in Doubt, Compile With clang++
+ 
+ If you encounter weird C++ link-time errors while trying to compile
+-C-Reduce (in particular, while compiling its internal `clang_delta'
+-tool), please try compiling with `clang++'.
++C-Reduce (in particular, while compiling its internal `clang_delta`
++tool), please try compiling with clang++.
+ 
+ We have encountered link-time problems while trying to compile
+ C-Reduce with GCC 5.* and the precompiled LLVM binaries available
+@@ -112,83 +109,96 @@ If you are curious, for some discussion of this issue, see:
+ <https://github.com/csmith-project/creduce/issues/101>
+ <https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dual_abi.html>
+ 
+-* The `configure' Way
++### The `configure` Way
+ 
+ From either the source directory or a build directory:
+ 
+-  [source-path/]configure [options]
+-  make
+-  make install
++```
++[source-path/]configure [options]
++make
++make install
++```
+ 
+-The `configure' script was generated by GNU Autoconf, and therefore
++The `configure` script was generated by GNU Autoconf, and therefore
+ accepts the usual options for naming the installation directories,
+-choosing the compilers you want to use, and so on.  `configure --help'
++choosing the compilers you want to use, and so on.  `configure --help`
+ summarizes the command-line options.
+ 
+-If LLVM/Clang is not in your search path, you can tell the `configure'
++If LLVM/Clang is not in your search path, you can tell the `configure`
+ script where to find LLVM/Clang:
+ 
+-  # Use the LLVM/Clang tree rooted at /opt/llvm
+-  configure --with-llvm=/opt/llvm
++```
++# Use the LLVM/Clang tree rooted at /opt/llvm
++configure --with-llvm=/opt/llvm
++```
+ 
+ If you choose to build LLVM and Clang yourself, *and* if you choose to
+ keep your LLVM and Clang build trees separate, you can tell the
+-`configure' script where to find your separate Clang tree:
++`configure` script where to find your separate Clang tree:
+ 
+-  # Use separate LLVM and Clang build trees, /work/my-{llvm,clang}
+-  configure --with-llvm=/work/my-llvm \
+-    --with-clang=/work/my-clang
++```
++# Use separate LLVM and Clang build trees, /work/my-{llvm,clang}
++configure --with-llvm=/work/my-llvm --with-clang=/work/my-clang
++```
+ 
+-You do *not* need to specify `--with-clang' if you build Clang within
++You do *not* need to specify `--with-clang` if you build Clang within
+ your LLVM tree.  Also note that you must actually *build* LLVM and
+ Clang before building C-Reduce.
+ 
+ Note that assertions are enabled by default (which is probably what
+ you want).  To disable assertions:
+ 
+-  configure --disable-trans-assert
++```
++configure --disable-trans-assert
++```
+ 
+ The generated Makefiles require GNU Make.  BSD Make will not work.
+ If you see weird make-time errors, please check that you are using
+ GNU Make.
+ 
+-* The CMake Way
++### The CMake Way
+ 
+ From either the source directory or a build directory:
+ 
+-  cmake [source-dir] [options]
+-  make
+-  make install
++```
++cmake [source-dir] [options]
++make
++make install
++```
+ 
+ If LLVM/Clang is not in your search path, you can tell CMake where to
+ find LLVM/Clang:
+ 
+-  # Use the LLVM/Clang tree rooted at /opt/llvm
+-  cmake [source-dir] -DCMAKE_PREFIX_PATH=/opt/llvm
++```
++# Use the LLVM/Clang tree rooted at /opt/llvm
++cmake [source-dir] -DCMAKE_PREFIX_PATH=/opt/llvm
++```
+ 
+ Alternatively, if you choose to build LLVM and Clang yourself, you can
+-set the LLVM_DIR and/or Clang_DIR variables to paths where CMake can
+-find the `LLVMConfig.cmake' and/or `ClangConfig.cmake' files.  The
+-value of LLVM_DIR is usually "./lib/cmake/llvm", relative to your LLVM
+-build or install directory.  Similarly, the value of Clang_DIR is
+-usually "./lib/cmake/clang", relative to your Clang build or install
++set the `LLVM_DIR` and/or `Clang_DIR` variables to paths where CMake can
++find the `LLVMConfig.cmake` and/or `ClangConfig.cmake` files.  The
++value of `LLVM_DIR` is usually `./lib/cmake/llvm`, relative to your LLVM
++build or install directory.  Similarly, the value of `Clang_DIR` is
++usually `./lib/cmake/clang`, relative to your Clang build or install
+ directory.  For example:
+ 
+-  # Use separate LLVM and Clang build trees, /work/my-{llvm,clang}
+-  cmake [source-dir] -DLLVM_DIR=/work/my-llvm/lib/cmake/llvm \
+-    -DClang_DIR=/work/my-clang/lib/cmake/clang
++```
++# Use separate LLVM and Clang build trees, /work/my-{llvm,clang}
++cmake [source-dir] -DLLVM_DIR=/work/my-llvm/lib/cmake/llvm \
++  -DClang_DIR=/work/my-clang/lib/cmake/clang
++```
+ 
+-You do *not* need to set Clang_DIR if you build Clang within your LLVM
++You do *not* need to set `Clang_DIR` if you build Clang within your LLVM
+ tree.  Also, note that you must actually *build* LLVM and Clang before
+ building C-Reduce.
+ 
+-Note that assertions are enabled by default (which is probably what
+-you want).  To disable assertions:
++Note that assertions are enabled by default. To disable assertions:
+ 
+-  cmake ... -DENABLE_TRANS_ASSERT=OFF
++```
++cmake ... -DENABLE_TRANS_ASSERT=OFF
++```
+ 
+---------------------------------------------------------------------
+-Regarding LLVM versions:
++## Regarding LLVM versions
+ 
+ Released versions of C-Reduce, and also our master branch at GitHub,
+ need to be compiled against specific released versions of LLVM, as
+@@ -198,7 +208,6 @@ Our GitHub repo usually also has a branch called llvm-svn-compatible
+ that supports building C-Reduce against LLVMs that are newer than the
+ last released version.  The most recent version of LLVM that the
+ llvm-svn-compatible branch is known to compile against is recorded in
+-LAST_KNOWN_WORKING_LLVM.  C-Reduce may happen to also build against
++`LAST_KNOWN_WORKING_LLVM`.  C-Reduce may happen to also build against
+ revisions before or after this, but we make no guarantees.
+ 
+---------------------------------------------------------------------
+diff --git a/README b/README.md
+similarity index 52%
+rename from README
+rename to README.md
+index 492b6f5..2b9f79e 100644
+--- a/README
++++ b/README.md
+@@ -1,8 +1,6 @@
+--*- mode: Text -*-
++# C-Reduce
+ 
+---------------------------------------------------------------------
+-
+-About C-Reduce:
++## About 
+ 
+ C-Reduce is a tool that takes a large C or C++ program that has a
+ property of interest (such as triggering a compiler bug) and
+@@ -10,41 +8,35 @@ automatically produces a much smaller C/C++ program that has the same
+ property.  It is intended for use by people who discover and report
+ bugs in compilers and other tools that process C/C++ code.
+ 
+-NOTE: C-Reduce happens to do a pretty good job reducing the size of
++*NOTE:* C-Reduce happens to do a pretty good job reducing the size of
+ programs in languages other than C/C++, such as JavaScript and Rust.
+ If you need to reduce programs in some other language, please give it
+ a try.
+ 
+-Documentation and other information can be found at the C-Reduce web
+-page:
+-
+-  http://embed.cs.utah.edu/creduce/
+-
+---------------------------------------------------------------------
+-
+-Installation:
++Documentation and other information can be found at the [C-Reduce web
++page](http://embed.cs.utah.edu/creduce/)
+ 
+-see the file INSTALL
++## Installation
+ 
+---------------------------------------------------------------------
++See [INSTALL.md](https://github.com/csmith-project/creduce/blob/master/INSTALL.md)
+ 
+-Notes:
++## Notes
+ 
+ 1. When set to use more than one core, C-Reduce can cause space in
+-/tmp to be leaked. This happens because sometimes C-Reduce will kill a
+-compiler invocation when a result that is computed in parallel makes
++`/tmp` to be leaked. This happens because sometimes C-Reduce will kill
++a compiler invocation when a result that is computed in parallel makes
+ it clear that that compiler invocation is no longer useful. If the
+-compiler leaves files in /tmp when it is killed, C-Reduce has no way
++compiler leaves files in `/tmp` when it is killed, C-Reduce has no way
+ to discover and remove the files. You will need to do this manually
+ from time to time if temporary file space is limited. The leakage is
+ typically pretty slow. If you need to avoid this problem altogether,
+-you can run C-Reduce on a single core (using "--n 1") in which case
++you can run C-Reduce on a single core (using `--n 1`) in which case
+ C-Reduce will never kill a running compiler instance. Alternatively, a
+-command line option such as -pipe (supported by gcc) may suppress the
+-creation of temporary files altogether. Another possibility is to set
+-the TMPDIR environment variable to something like "/tmp/creduce-stuff"
+-before invoking C-Reduce -- assuming that the tools you are invoking
+-respect this variable.
++command line option such as `-pipe` (supported by GCC) may suppress
++the creation of temporary files altogether. Another possibility is to
++set the `TMPDIR` environment variable to something like
++`/tmp/creduce-stuff` before invoking C-Reduce -- assuming that the
++tools you are invoking respect this variable.
+ 
+ 2. Each invocation of the interestingness test is performed in a fresh
+ temporary directory containing a copy of the file that is being
+@@ -52,4 +44,3 @@ reduced. If your interestingness test requires access to other files,
+ you should either copy them into the current working directory or else
+ refer to them using an absolute path.
+ 
+---------------------------------------------------------------------
+-- 
+2.21.0
+

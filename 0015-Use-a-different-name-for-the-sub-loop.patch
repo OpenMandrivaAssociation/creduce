@@ -1,0 +1,39 @@
+From 873ade2b6cce4f68f35633bd052e586193d5b4ca Mon Sep 17 00:00:00 2001
+From: 360 CodeSafe <39950310+360CodeSafe@users.noreply.github.com>
+Date: Thu, 20 Sep 2018 17:16:10 +0800
+Subject: [PATCH 15/31] Use a different name for the sub loop
+
+Since variable 'I' is already used as the iterator in for in line 108, in line 123, it is better to use another variable as the counter for the for loop.
+---
+ clang_delta/ReduceArraySize.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/clang_delta/ReduceArraySize.cpp b/clang_delta/ReduceArraySize.cpp
+index d96ed0c..e86fd73 100644
+--- a/clang_delta/ReduceArraySize.cpp
++++ b/clang_delta/ReduceArraySize.cpp
+@@ -120,9 +120,9 @@ void ReduceArraySize::doAnalysis(void)
+     unsigned int DimSz = DimVec->size();
+     TransAssert((DimSz == OrigDimVec->size()) &&
+                 "Two DimValueVectors should have the same size!");
+-    for (unsigned int I = 0; I < DimSz; ++I) {
+-      int DimV = (*DimVec)[I];
+-      int OrigDimV = (*OrigDimVec)[I];
++    for (unsigned int II = 0; II < DimSz; ++II) {
++      int DimV = (*DimVec)[II];
++      int OrigDimV = (*OrigDimVec)[II];
+       if ((DimV == -1) || (OrigDimV == 0) || ((DimV+1) == OrigDimV))
+         continue;
+ 
+@@ -132,7 +132,7 @@ void ReduceArraySize::doAnalysis(void)
+ 
+       TheVarDecl = VD;
+       TheDimValue = DimV;
+-      TheDimIdx = I;
++      TheDimIdx = II;
+     }
+   }
+ }
+-- 
+2.21.0
+

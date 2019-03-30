@@ -1,0 +1,45 @@
+From 7ccbd726414b068c40e1be9a5488467f88196a6c Mon Sep 17 00:00:00 2001
+From: Amy Huang <akhuang@google.com>
+Date: Tue, 19 Feb 2019 17:15:01 -0800
+Subject: [PATCH 25/31] add pass to remove constant ifs
+
+---
+ creduce/pass_unifdef.pm | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/creduce/pass_unifdef.pm b/creduce/pass_unifdef.pm
+index 72c8219..a6f70cf 100644
+--- a/creduce/pass_unifdef.pm
++++ b/creduce/pass_unifdef.pm
+@@ -49,7 +49,7 @@ sub check_prereqs () {
+ }
+ 
+ sub new ($$) {
+-    my $index = 0;
++    my $index = -1;
+     return \$index;
+ }
+ 
+@@ -72,6 +72,19 @@ sub transform ($$$) {
+     close INF;
+     my @deflist = sort keys %defs;
+     my $tmpfile = File::Temp::tmpnam();
++
++    # remove constant ifs
++    if ($index == -1) {
++	my $cmd = "$unifdef -k -o $tmpfile $cfile >/dev/null 2>&1";
++	runit ($cmd);
++	$index++;
++	if (compare($cfile, $tmpfile) == 0) {
++	    goto AGAIN;
++        }
++	File::Copy::move($tmpfile, $cfile);
++	return ($OK, \$index);
++    }
++
+   AGAIN:
+     print "index = $index\n" if $DEBUG;
+     my $DU = (($index % 2) == 0) ? "-D" : "-U";
+-- 
+2.21.0
+

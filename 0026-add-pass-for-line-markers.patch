@@ -1,0 +1,186 @@
+From 241ee54f3a504235f7da6c76ba43fa04fbb477ab Mon Sep 17 00:00:00 2001
+From: Amy Huang <akhuang@google.com>
+Date: Wed, 20 Feb 2019 13:52:26 -0800
+Subject: [PATCH 26/31] add pass for line markers
+
+---
+ creduce/CMakeLists.txt       |   3 +
+ creduce/Makefile.am          |   1 +
+ creduce/Makefile.in          |   1 +
+ creduce/creduce.in           |   1 +
+ creduce/pass_line_markers.pm | 113 +++++++++++++++++++++++++++++++++++
+ 5 files changed, 119 insertions(+)
+ create mode 100644 creduce/pass_line_markers.pm
+
+diff --git a/creduce/CMakeLists.txt b/creduce/CMakeLists.txt
+index 05d74a7..675af07 100644
+--- a/creduce/CMakeLists.txt
++++ b/creduce/CMakeLists.txt
+@@ -235,6 +235,9 @@ add_custom_target(Modules ALL
+   COMMAND ${CMAKE_COMMAND} -E copy_if_different
+     ${PROJECT_SOURCE_DIR}/pass_ints.pm
+     ${PROJECT_BINARY_DIR}
++  COMMAND ${CMAKE_COMMAND} -E copy_if_different
++    ${PROJECT_SOURCE_DIR}/pass_line_markers.pm
++    ${PROJECT_BINARY_DIR}
+   COMMAND ${CMAKE_COMMAND} -E copy_if_different
+     ${PROJECT_SOURCE_DIR}/pass_lines.pm
+     ${PROJECT_BINARY_DIR}
+diff --git a/creduce/Makefile.am b/creduce/Makefile.am
+index bb6fd69..525093c 100644
+--- a/creduce/Makefile.am
++++ b/creduce/Makefile.am
+@@ -28,6 +28,7 @@ dist_perllib_DATA = \
+ 	pass_includes.pm \
+ 	pass_indent.pm \
+ 	pass_ints.pm \
++	pass_line_markers.pm \
+ 	pass_lines.pm \
+ 	pass_peep.pm \
+ 	pass_special.pm \
+diff --git a/creduce/Makefile.in b/creduce/Makefile.in
+index 6477ec4..ca44e65 100644
+--- a/creduce/Makefile.in
++++ b/creduce/Makefile.in
+@@ -320,6 +320,7 @@ dist_perllib_DATA = \
+ 	pass_includes.pm \
+ 	pass_indent.pm \
+ 	pass_ints.pm \
++	pass_line_markers.pm \
+ 	pass_lines.pm \
+ 	pass_peep.pm \
+ 	pass_special.pm \
+diff --git a/creduce/creduce.in b/creduce/creduce.in
+index cd2aba5..b666908 100644
+--- a/creduce/creduce.in
++++ b/creduce/creduce.in
+@@ -758,6 +758,7 @@ my @all_methods = (
+     { "name" => "pass_unifdef",  "arg" => "0",                       "pri" => 450,  "first_pass_pri" =>  0, "C" => 1, },
+     { "name" => "pass_comments", "arg" => "0",                       "pri" => 451,  "first_pass_pri" =>  0, "C" => 1, },
+     { "name" => "pass_includes", "arg" => "0",                                      "first_pass_pri" =>  1, "C" => 1, },
++    { "name" => "pass_line_markers", "arg" => "0",                                  "first_pass_pri" =>  1, "C" => 1, },
+     { "name" => "pass_blank",    "arg" => "0",                                      "first_pass_pri" =>  2, },
+     { "name" => "pass_clang_binsrch",    "arg" => "replace-function-def-with-decl", "first_pass_pri" =>  3, "C" => 1, },
+     { "name" => "pass_clang_binsrch",    "arg" => "remove-unused-function",         "first_pass_pri" =>  4, "C" => 1, },
+diff --git a/creduce/pass_line_markers.pm b/creduce/pass_line_markers.pm
+new file mode 100644
+index 0000000..9d81967
+--- /dev/null
++++ b/creduce/pass_line_markers.pm
+@@ -0,0 +1,113 @@
++## -*- mode: Perl -*-
++##
++## Copyright (c) 2019 The University of Utah
++## All rights reserved.
++##
++## This file is distributed under the University of Illinois Open Source
++## License.  See the file COPYING for details.
++
++###############################################################################
++
++package pass_line_markers;
++
++use strict;
++use warnings;
++
++use File::Copy;
++use File::Compare;
++use creduce_utils;
++
++sub check_prereqs () {
++    return 1;
++}
++
++sub count_line_markers ($$) {
++    (my $cfile, my $which) = @_;
++    open INF, "<$cfile" or die;
++    my $n = 0;
++    while (my $line = <INF>) {
++        if ($line =~ m/^\s*#\s*[0-9]+/) {
++            $n++;
++        }
++    }
++    close INF;
++    return $n;
++}
++
++sub new ($$) {
++    my ($cfile, $which) = @_;
++    my %sh;
++    my $instances = count_line_markers($cfile, $which);
++    $sh{"index"} = $instances;
++    $sh{"chunk"} = $instances;
++    return \%sh;
++}
++
++sub advance ($$$) {
++    (my $cfile, my $which, my $state) = @_;
++    my %sh = %{$state};
++
++    $sh{"index"} -= $sh{"chunk"};
++    if ($DEBUG) {
++        my $index = $sh{"index"};
++        my $chunk = $sh{"chunk"};
++        print "ADVANCE: index = $index, chunk = $chunk\n";
++    }
++    return \%sh;
++}
++
++sub transform ($$$) {
++    my ($cfile, $which, $state) = @_;
++    my %sh = %{$state};
++
++  AGAIN:
++
++    my $instances = count_line_markers($cfile, $which);
++    $sh{"index"} = $instances if ($sh{"index"} > $instances);
++    my $index = $sh{"index"};
++    my $chunk = $sh{"chunk"};
++
++    if ($index >= 0 && $instances > 0 && $chunk > 0) {
++        my $start = $index - $chunk;
++        $start = 0 if ($start < 0);
++
++        open INF, "<$cfile" or die;
++        my $tmpfile = File::Temp::tmpnam();
++        open OUTF, ">$tmpfile" or die;
++        my $line_markers = -1;
++        while (my $line = <INF>) {
++            if ($line =~ m/^\s*#\s*[0-9]+/) {
++                $line_markers++;
++                if ($line_markers >= $start && $line_markers < $index) {
++                    next;
++                }
++            }
++            print OUTF $line;
++        }
++        close INF;
++        close OUTF;
++
++        my $new_instances = count_line_markers($tmpfile, $which);
++        print "went from $instances line markers to $new_instances ",
++            "with chunk $chunk\n" if $DEBUG;
++
++        if (compare($cfile, $tmpfile) == 0) {
++            print "did not change file\n" if $DEBUG;
++            unlink $tmpfile;
++            $sh{"index"} -= $sh{"chunk"};
++            goto AGAIN;
++        }
++        File::Copy::move($tmpfile, $cfile);
++    } else {
++        return ($STOP, \%sh) if ($chunk < 10);
++        my $newchunk = int ($chunk / 2.0);
++        $sh{"chunk"} = $newchunk;
++        print "granularity reduced to $newchunk\n" if $DEBUG;
++        $sh{"index"} = $instances;
++        goto AGAIN;
++    }
++
++    return ($OK, \%sh);
++}
++
++1;
+-- 
+2.21.0
+

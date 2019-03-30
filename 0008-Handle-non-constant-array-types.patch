@@ -1,0 +1,108 @@
+From 921324f8c7eec1ec94f329e4e3e7a492dee90b2f Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Fri, 24 Aug 2018 01:00:51 -0700
+Subject: [PATCH 08/31] Handle non-constant-array types
+
+---
+ clang_delta/ReduceArrayDim.cpp                | 29 ++++++++++++++-----
+ clang_delta/ReduceArrayDim.h                  |  3 ++
+ .../reduce-array-dim/non-type-temp-arg.cpp    | 11 +++++++
+ 3 files changed, 35 insertions(+), 8 deletions(-)
+ create mode 100644 clang_delta/tests/reduce-array-dim/non-type-temp-arg.cpp
+
+diff --git a/clang_delta/ReduceArrayDim.cpp b/clang_delta/ReduceArrayDim.cpp
+index dfc185a..a2f8e40 100644
+--- a/clang_delta/ReduceArrayDim.cpp
++++ b/clang_delta/ReduceArrayDim.cpp
+@@ -239,6 +239,25 @@ void ReduceArrayDim::rewriteInitListExpr(const InitListExpr *ILE,
+   }
+ }
+ 
++unsigned ReduceArrayDim::getArraySize(const ArrayType *ATy)
++{
++  if (const ConstantArrayType *CstArrayTy =
++      dyn_cast<ConstantArrayType>(ATy)) {
++    return getConstArraySize(CstArrayTy);
++  }
++
++  if (const DependentSizedArrayType *DepArrayTy =
++      dyn_cast<DependentSizedArrayType>(ATy)) {
++    const Expr *E = DepArrayTy->getSizeExpr();
++    llvm::APSInt Result;
++    if (E->EvaluateAsInt(Result, *Context)) {
++      return (unsigned)(*Result.getRawData());
++    }
++  }
++
++  return 1;
++}
++
+ void ReduceArrayDim::rewriteOneVarDecl(const VarDecl *VD)
+ {
+   const Type *Ty = VD->getType().getTypePtr();
+@@ -259,9 +278,7 @@ void ReduceArrayDim::rewriteOneVarDecl(const VarDecl *VD)
+   TransAssert((BPVector.size() > 1) && "Invalid Bracket Pairs!");
+   
+   ArraySubTypeVector::const_reverse_iterator TyIdx = TyVec.rbegin();
+-  const ConstantArrayType *CstArrayTy = dyn_cast<ConstantArrayType>(*TyIdx);
+-  TransAssert(CstArrayTy && "Non ConstantArrayType!");
+-  unsigned LastSz = getConstArraySize(CstArrayTy);
++  unsigned LastSz = getArraySize(*TyIdx);
+ 
+   ++TyIdx;
+   const ArrayType *SecArrayTy = (*TyIdx);
+@@ -275,12 +292,8 @@ void ReduceArrayDim::rewriteOneVarDecl(const VarDecl *VD)
+   BracketLocPair *SecBracketPair = (*BIdx);
+   // We keep incomplete array
+   if (!dyn_cast<IncompleteArrayType>(SecArrayTy)) {
+-    const ConstantArrayType *SecCstArrayTy = 
+-      dyn_cast<ConstantArrayType>(SecArrayTy);
+-    TransAssert(SecCstArrayTy && "Non ConstantArrayType!");
+-
+     // Keep this value, which is needed for rewriting ArraySubscriptExpr
+-    ArraySz = getConstArraySize(SecCstArrayTy);
++    ArraySz = getArraySize(SecArrayTy);
+ 
+     std::stringstream TmpSS;
+     TmpSS << (LastSz * ArraySz);
+diff --git a/clang_delta/ReduceArrayDim.h b/clang_delta/ReduceArrayDim.h
+index 0a5ff7c..efd859c 100644
+--- a/clang_delta/ReduceArrayDim.h
++++ b/clang_delta/ReduceArrayDim.h
+@@ -21,6 +21,7 @@ namespace clang {
+   class ASTContext;
+   class VarDecl;
+   class ArraySubscriptExpr;
++  class ArrayType;
+ }
+ 
+ class ReduceArrayDimCollectionVisitor;
+@@ -83,6 +84,8 @@ private:
+   void rewriteInitListExpr(const clang::InitListExpr *ILE,
+                            unsigned int Dim);
+ 
++  unsigned getArraySize(const clang::ArrayType *ATy);
++
+   VarDeclSet VisitedVarDecls;
+ 
+   ReduceArrayDimCollectionVisitor *CollectionVisitor;
+diff --git a/clang_delta/tests/reduce-array-dim/non-type-temp-arg.cpp b/clang_delta/tests/reduce-array-dim/non-type-temp-arg.cpp
+new file mode 100644
+index 0000000..ed2cced
+--- /dev/null
++++ b/clang_delta/tests/reduce-array-dim/non-type-temp-arg.cpp
+@@ -0,0 +1,11 @@
++// RUN: %clang_delta --transformation=reduce-array-dim --counter=1 %s 2>&1 | %remove_lit_checks | FileCheck %s
++
++template <int h>
++void foo() {
++// CHECK: double k[1];
++  double k[1][h];
++// CHECK-NEXT: }
++}
++void bar() {
++  foo<1>();
++}
+-- 
+2.21.0
+
