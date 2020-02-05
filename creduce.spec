@@ -6,12 +6,13 @@ Version: 2.10.0
 Release: 0.%{git}.1
 Source0: %{name}-%{git}.tar.xz
 %else
-Release: 1
+Release: 2
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
+Patch0: creduce-2.10.0-clang-10.0.patch
 License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel
