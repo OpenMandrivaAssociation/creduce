@@ -1,0 +1,68 @@
+diff -up creduce-2.10.0/clang_delta/CommonRenameClassRewriteVisitor.h.omv~ creduce-2.10.0/clang_delta/CommonRenameClassRewriteVisitor.h
+--- creduce-2.10.0/clang_delta/CommonRenameClassRewriteVisitor.h.omv~	2020-08-04 03:57:21.340573674 +0200
++++ creduce-2.10.0/clang_delta/CommonRenameClassRewriteVisitor.h	2020-08-04 03:58:04.668038119 +0200
+@@ -98,7 +98,7 @@ bool CommonRenameClassRewriteVisitor<T>:
+     return true;
+ 
+   IdentifierInfo *IdInfo = DeclName.getAsIdentifierInfo();
+-  std::string IdName = IdInfo->getName();
++  std::string IdName = static_cast<std::string>(IdInfo->getName());
+   std::string Name;
+   if (getNewNameByName(IdName, Name)) {
+     SourceLocation LocStart = NameInfo.getBeginLoc();
+@@ -332,7 +332,7 @@ template<typename T> bool CommonRenameCl
+   TransAssert(DTST && "Bad DependentTemplateSpecializationType!");
+ 
+   const IdentifierInfo *IdInfo = DTST->getIdentifier();
+-  std::string IdName = IdInfo->getName();
++  std::string IdName = static_cast<std::string>(IdInfo->getName());
+   std::string Name;
+   if (getNewNameByName(IdName, Name)) {
+     SourceLocation LocStart = DTSLoc.getTemplateNameLoc();
+diff -up creduce-2.10.0/clang_delta/RemoveNamespace.cpp.omv~ creduce-2.10.0/clang_delta/RemoveNamespace.cpp
+--- creduce-2.10.0/clang_delta/RemoveNamespace.cpp.omv~	2020-08-04 04:01:50.605858029 +0200
++++ creduce-2.10.0/clang_delta/RemoveNamespace.cpp	2020-08-04 04:02:00.391992740 +0200
+@@ -458,7 +458,7 @@ bool RemoveNamespaceRewriteVisitor::Visi
+   TransAssert(DTST && "Bad DependentTemplateSpecializationType!");
+ 
+   const IdentifierInfo *IdInfo = DTST->getIdentifier();
+-  std::string IdName = IdInfo->getName();
++  std::string IdName = static_cast<std::string>(IdInfo->getName());
+   std::string Name;
+ 
+   // FIXME:
+diff -up creduce-2.10.0/clang_delta/RewriteUtils.cpp.omv~ creduce-2.10.0/clang_delta/RewriteUtils.cpp
+--- creduce-2.10.0/clang_delta/RewriteUtils.cpp.omv~	2020-08-04 04:02:55.526767756 +0200
++++ creduce-2.10.0/clang_delta/RewriteUtils.cpp	2020-08-04 04:03:04.222892367 +0200
+@@ -730,7 +730,7 @@ std::string RewriteUtils::getStmtIndentS
+     ++I;
+   indentSpace = MB.substr(lineOffs, I-lineOffs);
+ 
+-  return indentSpace;
++  return static_cast<std::string>(indentSpace);
+ }
+ 
+ bool RewriteUtils::addLocalVarToFunc(const std::string &VarStr,
+diff -up creduce-2.10.0/clang_delta/Transformation.cpp.omv~ creduce-2.10.0/clang_delta/Transformation.cpp
+--- creduce-2.10.0/clang_delta/Transformation.cpp.omv~	2020-08-04 04:03:34.876336465 +0200
++++ creduce-2.10.0/clang_delta/Transformation.cpp	2020-08-04 04:03:45.915498187 +0200
+@@ -357,7 +357,7 @@ unsigned int Transformation::getConstArr
+   llvm::SmallString<8> IntStr;
+   Result.toStringUnsigned(IntStr);
+ 
+-  std::stringstream TmpSS(IntStr.str());
++  std::stringstream TmpSS(static_cast<std::string>(IntStr.str()));
+ 
+   if (!(TmpSS >> Sz)) {
+     TransAssert(0 && "Non-integer value!");
+diff -up creduce-2.10.0/clang_delta/TransformationManager.cpp.omv~ creduce-2.10.0/clang_delta/TransformationManager.cpp
+--- creduce-2.10.0/clang_delta/TransformationManager.cpp.omv~	2020-08-04 04:04:23.900061530 +0200
++++ creduce-2.10.0/clang_delta/TransformationManager.cpp	2020-08-04 04:04:37.026258581 +0200
+@@ -18,6 +18,7 @@
+ 
+ #include "clang/Basic/Builtins.h"
+ #include "clang/Basic/Diagnostic.h"
++#include "clang/Basic/FileManager.h"
+ #include "clang/Basic/TargetInfo.h"
+ #include "clang/Lex/Preprocessor.h"
+ #include "clang/Frontend/CompilerInstance.h"
