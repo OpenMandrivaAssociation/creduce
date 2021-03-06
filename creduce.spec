@@ -1,19 +1,18 @@
-%define git %nil
+%define git 20210306
 
 Name: creduce
-Version: 2.10.0
+Version: 2.11.0
 %if 0%{git}
 Release: 0.%{git}.1
-Source0: %{name}-%{git}.tar.xz
+Source0: https://github.com/csmith-project/creduce/archive/llvm-12.0-dev/%{name}-%{git}.tar.gz
 %else
-Release: 3
+Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
+Patch0: creduce-clang-12.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
-Patch0: creduce-2.10.0-clang-10.0.patch
-Patch1: creduce-2.10.0-llvm-11.patch
 License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel
@@ -38,7 +37,7 @@ report bugs in compilers and other tools that process C/C++ code.
 
 %prep
 %if 0%{git}
-%autosetup -p1 -n %{name}-%{name}-%{version}
+%autosetup -p1 -n %{name}-llvm-12.0-dev
 %else
 %autosetup -p1 -n %{name}-%{version}
 %endif
