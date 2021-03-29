@@ -17,6 +17,7 @@ License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel
 BuildRequires: clang-devel
+BuildRequires: llvm-polly-devel
 BuildRequires: flex
 BuildRequires: perl(File::Which)
 BuildRequires: perl(Getopt::Tabular)
