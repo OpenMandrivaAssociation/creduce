@@ -1,19 +1,22 @@
-%define git 20210505
+%define git 20210819
 
 Name: creduce
 Version: 2.11.0
 %if 0%{git}
 Release: 0.%{git}.1
-Source0: https://github.com/csmith-project/creduce/archive/llvm-12.0-dev/%{name}-%{git}.tar.gz
+Source0: https://github.com/csmith-project/creduce/archive/master/%{name}-%{git}.tar.gz
 %else
 Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
-Patch0: https://github.com/csmith-project/creduce/pull/231.patch
-Patch1: https://github.com/csmith-project/creduce/commit/575986abefbb80b1fd2e7e7fc573935fc56c7bd8.patch
-Patch2: https://github.com/csmith-project/creduce/commit/4c74487fcde78a129e792b39ab99498e073ae426.patch
-Patch3: https://github.com/csmith-project/creduce/commit/e507cca4ccb32585c5692d49b8d907c1051c826c.patch
+# From upstream llvm-12.0-dev branch
+Patch0: https://github.com/csmith-project/creduce/commit/3e1f5a1ec1365fafae965c97603221c9ccbc2d61.patch
+Patch1: https://github.com/csmith-project/creduce/commit/d45d5455558bacca3e5d6c3fffb3992b78f432aa.patch
+Patch2: https://github.com/csmith-project/creduce/commit/5e00bcfd691a3dde5c89c00d402b14bbeb13b6de.patch
+# Make it work
 Patch4: creduce-llvm-12.patch
+# And port to llvm-13
+Patch5: creduce-llvm-13.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
@@ -42,7 +45,7 @@ report bugs in compilers and other tools that process C/C++ code.
 
 %prep
 %if 0%{git}
-%autosetup -p1 -n %{name}-llvm-12.0-dev
+%autosetup -p1 -n %{name}-master
 %else
 %autosetup -p1 -n %{name}-%{version}
 %endif

@@ -1,0 +1,74 @@
+diff -up creduce-llvm-12.0-dev/clang_delta/RemoveNamespace.cpp.omv~ creduce-llvm-12.0-dev/clang_delta/RemoveNamespace.cpp
+--- creduce-llvm-12.0-dev/clang_delta/RemoveNamespace.cpp.omv~	2021-08-19 22:45:00.802394178 +0200
++++ creduce-llvm-12.0-dev/clang_delta/RemoveNamespace.cpp	2021-08-19 23:00:41.118918532 +0200
+@@ -787,7 +787,7 @@ void RemoveNamespace::handleOneUsingShad
+     return;
+ 
+   std::string NewName;
+-  const UsingDecl *D = UD->getUsingDecl();
++  const UsingDecl *D = dyn_cast<UsingDecl>(UD->getIntroducer());
+ 
+   NestedNameSpecifierLoc QualifierLoc = D->getQualifierLoc();
+   NestedNameSpecifier *NNS = QualifierLoc.getNestedNameSpecifier();
+diff -up creduce-llvm-12.0-dev/clang_delta/RemoveNestedFunction.cpp.omv~ creduce-llvm-12.0-dev/clang_delta/RemoveNestedFunction.cpp
+--- creduce-llvm-12.0-dev/clang_delta/RemoveNestedFunction.cpp.omv~	2021-08-19 23:01:25.602954065 +0200
++++ creduce-llvm-12.0-dev/clang_delta/RemoveNestedFunction.cpp	2021-08-19 23:02:52.168024450 +0200
+@@ -190,12 +190,12 @@ void RemoveNestedFunction::getVarStrForT
+ 
+   std::string ArgStr;
+   llvm::raw_string_ostream Stream(ArgStr);
+-  TST->getArg(0).print(Context->getPrintingPolicy(), Stream);
++  TST->getArg(0).print(Context->getPrintingPolicy(), Stream, true);
+ 
+   for (unsigned I = 1; I < NumArgs; ++I) {
+     const TemplateArgument &Arg = TST->getArg(I);
+     Stream << ", ";
+-    Arg.print(Context->getPrintingPolicy(), Stream);
++    Arg.print(Context->getPrintingPolicy(), Stream, true);
+   }
+   size_t BeginPos = VarStr.find_first_of('<');
+   size_t EndPos = VarStr.find_last_of('>');
+diff -up creduce-llvm-12.0-dev/clang_delta/RewriteUtils.cpp.omv~ creduce-llvm-12.0-dev/clang_delta/RewriteUtils.cpp
+--- creduce-llvm-12.0-dev/clang_delta/RewriteUtils.cpp.omv~	2021-08-19 23:04:52.991125036 +0200
++++ creduce-llvm-12.0-dev/clang_delta/RewriteUtils.cpp	2021-08-19 23:07:22.022623200 +0200
+@@ -554,10 +554,10 @@ bool RewriteUtils::removeVarFromDeclStmt
+   // in this case, struct S0 is implicitly declared
+   if (PrevDecl) {
+     if ( RecordDecl *RD = dyn_cast<RecordDecl>(PrevDecl) ) {
+-      DeclGroup DGroup = DS->getDeclGroup().getDeclGroup();
++      DeclGroup *DGroup = &DS->getDeclGroup().getDeclGroup();
+       IsFirstDecl = true;
+       if ((!RD->getDefinition() || RD->getNameAsString() == "") &&
+-          DGroup.size() == 2) {
++          DGroup->size() == 2) {
+         *StmtRemoved = true;
+         return !(TheRewriter->RemoveText(StmtRange));
+       }
+diff -up creduce-llvm-12.0-dev/clang_delta/TemplateNonTypeArgToInt.cpp.omv~ creduce-llvm-12.0-dev/clang_delta/TemplateNonTypeArgToInt.cpp
+--- creduce-llvm-12.0-dev/clang_delta/TemplateNonTypeArgToInt.cpp.omv~	2021-08-19 23:07:53.946037106 +0200
++++ creduce-llvm-12.0-dev/clang_delta/TemplateNonTypeArgToInt.cpp	2021-08-19 23:23:08.456779751 +0200
+@@ -167,7 +167,9 @@ void TemplateNonTypeArgToInt::handleOneT
+     if (!TheExpr->isValueDependent() &&
+         TheExpr->EvaluateAsInt(Result, *Context)) {
+       llvm::APSInt IVal = Result.Val.getInt();
+-      IntString = IVal.toString(10);
++      SmallString<16> IntStringTmp;
++      IVal.toString(IntStringTmp, 10);
++      IntString = (std::string)IntStringTmp;
+     }
+   }
+ }
+diff -up creduce-llvm-12.0-dev/clang_delta/Transformation.cpp.omv~ creduce-llvm-12.0-dev/clang_delta/Transformation.cpp
+--- creduce-llvm-12.0-dev/clang_delta/Transformation.cpp.omv~	2021-08-19 23:24:03.109016920 +0200
++++ creduce-llvm-12.0-dev/clang_delta/Transformation.cpp	2021-08-19 23:24:50.289214633 +0200
+@@ -395,7 +395,9 @@ const Expr *Transformation::getBaseExprA
+       // If we cannot have an integeral index, use 0.
+       if (IdxE && IdxE->EvaluateAsInt(Result, *Context)) {
+         llvm::APSInt IVal = Result.Val.getInt();
+-        std::string IntStr = IVal.toString(10);
++	SmallString<16> IntStrTmp;
++	IVal.toString(IntStrTmp, 10);
++        std::string IntStr = (std::string)IntStrTmp;
+         std::stringstream TmpSS(IntStr);
+         if (!(TmpSS >> Idx))
+           TransAssert(0 && "Non-integer value!");

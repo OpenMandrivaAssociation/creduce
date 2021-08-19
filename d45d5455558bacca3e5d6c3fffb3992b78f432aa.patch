@@ -1,0 +1,39 @@
+From d45d5455558bacca3e5d6c3fffb3992b78f432aa Mon Sep 17 00:00:00 2001
+From: Yang Chen <chenyang@cs.utah.edu>
+Date: Tue, 27 Oct 2020 00:18:59 -0700
+Subject: [PATCH] built with llvm-projet dev branch
+
+Known to work with llvm-project commit 905f874c449cc114d74eaeb19639664779fd0b6e
+---
+ clang_delta/RewriteUtils.cpp   | 4 ++--
+ clang_delta/Transformation.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/clang_delta/RewriteUtils.cpp b/clang_delta/RewriteUtils.cpp
+index 8c185aaa..88a21f02 100644
+--- a/clang_delta/RewriteUtils.cpp
++++ b/clang_delta/RewriteUtils.cpp
+@@ -736,8 +736,8 @@ std::string RewriteUtils::getStmtIndentString(Stmt *S,
+   StringRef MB = SrcManager->getBufferData(FID);
+  
+   unsigned lineNo = SrcManager->getLineNumber(FID, StartOffset) - 1;
+-  const SrcMgr::ContentCache *
+-      Content = SrcManager->getSLocEntry(FID).getFile().getContentCache();
++  const SrcMgr::ContentCache *Content =
++    &SrcManager->getSLocEntry(FID).getFile().getContentCache();
+   unsigned lineOffs = Content->SourceLineCache[lineNo];
+  
+   // Find the whitespace at the start of the line.
+diff --git a/clang_delta/Transformation.cpp b/clang_delta/Transformation.cpp
+index 41153f3b..7240e077 100644
+--- a/clang_delta/Transformation.cpp
++++ b/clang_delta/Transformation.cpp
+@@ -106,7 +106,7 @@ void Transformation::outputTransformedSource(llvm::raw_ostream &OutStream)
+ void Transformation::outputOriginalSource(llvm::raw_ostream &OutStream)
+ {
+   FileID MainFileID = SrcManager->getMainFileID();
+-  const llvm::MemoryBuffer *MainBuf = SrcManager->getBuffer(MainFileID);
++  auto MainBuf = SrcManager->getBufferOrNone(MainFileID);
+   TransAssert(MainBuf && "Empty MainBuf!");
+   OutStream << MainBuf->getBufferStart();
+   OutStream.flush();
