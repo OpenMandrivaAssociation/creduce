@@ -1,4 +1,4 @@
-%define git 20210819
+%define git 20220213
 
 Name: creduce
 Version: 2.11.0
@@ -9,14 +9,9 @@ Source0: https://github.com/csmith-project/creduce/archive/master/%{name}-%{git}
 Release: 1
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
-# From upstream llvm-12.0-dev branch
-Patch0: https://github.com/csmith-project/creduce/commit/3e1f5a1ec1365fafae965c97603221c9ccbc2d61.patch
-Patch1: https://github.com/csmith-project/creduce/commit/d45d5455558bacca3e5d6c3fffb3992b78f432aa.patch
-Patch2: https://github.com/csmith-project/creduce/commit/5e00bcfd691a3dde5c89c00d402b14bbeb13b6de.patch
-# Make it work
-Patch4: creduce-llvm-12.patch
-# And port to llvm-13
-Patch5: creduce-llvm-13.patch
+# From upstream llvm-13.0-dev branch
+Patch0:	https://github.com/csmith-project/creduce/commit/05aa5659c055860e84ec9f53b19e1228b34510a1.patch
+Patch1: https://github.com/csmith-project/creduce/commit/4ae77d1e101135a6aea310b30c19e2af968b7bf6.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: http://embed.cs.utah.edu/creduce/
