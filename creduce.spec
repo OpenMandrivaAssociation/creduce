@@ -1,4 +1,4 @@
-%define git 20220213
+%define git 20220518
 
 Name: creduce
 Version: 2.11.0
