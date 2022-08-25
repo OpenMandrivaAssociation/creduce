@@ -1,0 +1,51 @@
+diff -up creduce-master/clang_delta/ExpressionDetector.cpp.omv~ creduce-master/clang_delta/ExpressionDetector.cpp
+--- creduce-master/clang_delta/ExpressionDetector.cpp.omv~	2022-08-25 23:20:35.749017173 +0200
++++ creduce-master/clang_delta/ExpressionDetector.cpp	2022-08-25 23:21:31.942337518 +0200
+@@ -62,7 +62,7 @@ public:
+   virtual void InclusionDirective(SourceLocation HashLoc,
+                           const Token &IncludeTok,
+                           StringRef FileName, bool IsAngled,
+-                          CharSourceRange FilenameRange, const FileEntry *File,
++                          CharSourceRange FilenameRange, Optional<FileEntryRef> File,
+                           StringRef SearchPath, StringRef RelativePath,
+                           const Module *Imported,
+                           SrcMgr::CharacteristicKind FileType) override;
+@@ -82,7 +82,7 @@ void IncludesPPCallbacks::InclusionDirec
+                                              StringRef FileName,
+                                             bool /*IsAngled*/,
+                                              CharSourceRange /*FilenameRange*/,
+-                                             const FileEntry * /*File*/,
++                                             Optional<FileEntryRef> /*File*/,
+                                              StringRef /*SearchPath*/,
+                                              StringRef /*RelativePath*/,
+                                              const Module * /*Imported*/,
+diff -up creduce-master/clang_delta/TransformationManager.cpp.omv~ creduce-master/clang_delta/TransformationManager.cpp
+--- creduce-master/clang_delta/TransformationManager.cpp.omv~	2022-08-25 23:38:33.828643913 +0200
++++ creduce-master/clang_delta/TransformationManager.cpp	2022-08-25 23:39:45.135097852 +0200
+@@ -105,13 +105,13 @@ bool TransformationManager::initializeCo
+   InputKind IK = FrontendOptions::getInputKindForExtension(
+         StringRef(SrcFileName).rsplit('.').second);
+   if (IK.getLanguage() == Language::C) {
+-    Invocation.setLangDefaults(ClangInstance->getLangOpts(), Language::C, T, PPOpts.Includes);
++    ClangInstance->getLangOpts().setLangDefaults(ClangInstance->getLangOpts(), Language::C, T, PPOpts.Includes);
+   }
+   else if (IK.getLanguage() == Language::CXX) {
+     // ISSUE: it might cause some problems when building AST
+     // for a function which has a non-declared callee, e.g.,
+     // It results an empty AST for the caller.
+-    Invocation.setLangDefaults(ClangInstance->getLangOpts(), Language::CXX, T, PPOpts.Includes);
++    ClangInstance->getLangOpts().setLangDefaults(ClangInstance->getLangOpts(), Language::CXX, T, PPOpts.Includes);
+   }
+   else if(IK.getLanguage() == Language::OpenCL) {
+     //Commandline parameters
+@@ -137,8 +137,8 @@ bool TransformationManager::initializeCo
+     CompilerInvocation::CreateFromArgs(Invocation,
+ 		                       ArrayRef<const char*>(&Args[0], &Args[0] + Args.size()),
+                                        ClangInstance->getDiagnostics());
+-    Invocation.setLangDefaults(ClangInstance->getLangOpts(),
+-                               Language::OpenCL, T, PPOpts.Includes);
++    ClangInstance->getLangOpts().setLangDefaults(ClangInstance->getLangOpts(),
++                                                 Language::OpenCL, T, PPOpts.Includes);
+   }
+   else {
+     ErrorMsg = "Unsupported file type!";
