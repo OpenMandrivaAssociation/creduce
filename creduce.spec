@@ -6,7 +6,7 @@ Version: 2.11.0
 Release: 0.%{git}.1
 Source0: https://github.com/csmith-project/creduce/archive/master/%{name}-%{git}.tar.gz
 %else
-Release: 1
+Release: 2
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 # From upstream llvm-13.0-dev branch
