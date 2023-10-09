@@ -1,0 +1,339 @@
+From 52a99b0069d6774c3228c176ca293e47c273ae93 Mon Sep 17 00:00:00 2001
+From: Moritz Pflanzer <moritz@pflanzer.eu>
+Date: Thu, 15 Mar 2018 09:42:58 +0100
+Subject: [PATCH 1/3] Simple removal of try-catch blocks
+
+---
+ clang_delta/CMakeLists.txt     |   2 +
+ clang_delta/RemoveTryCatch.cpp | 124 +++++++++++++++++++++++++++++++++
+ clang_delta/RemoveTryCatch.h   |  57 +++++++++++++++
+ 3 files changed, 183 insertions(+)
+ create mode 100644 clang_delta/RemoveTryCatch.cpp
+ create mode 100644 clang_delta/RemoveTryCatch.h
+
+diff --git a/clang_delta/CMakeLists.txt b/clang_delta/CMakeLists.txt
+index ab1dc420..c7ab58a5 100644
+--- a/clang_delta/CMakeLists.txt
++++ b/clang_delta/CMakeLists.txt
+@@ -158,6 +158,8 @@ add_executable(clang_delta
+   RemovePointer.h
+   RemoveTrivialBaseTemplate.cpp
+   RemoveTrivialBaseTemplate.h
++  RemoveTryCatch.cpp
++  RemoveTryCatch.h
+   RemoveUnresolvedBase.cpp
+   RemoveUnresolvedBase.h
+   RemoveUnusedEnumMember.cpp
+diff --git a/clang_delta/RemoveTryCatch.cpp b/clang_delta/RemoveTryCatch.cpp
+new file mode 100644
+index 00000000..d4655eed
+--- /dev/null
++++ b/clang_delta/RemoveTryCatch.cpp
+@@ -0,0 +1,124 @@
++//===----------------------------------------------------------------------===//
++//
++// Copyright (c) 2012, 2013, 2015 The University of Utah
++// Copyright (c) 2012 Konstantin Tokarev <annulen@yandex.ru>
++// All rights reserved.
++//
++// This file is distributed under the University of Illinois Open Source
++// License.  See the file COPYING for details.
++//
++//===----------------------------------------------------------------------===//
++
++#if HAVE_CONFIG_H
++#  include <config.h>
++#endif
++
++#include "RemoveTryCatch.h"
++
++#include <cctype>
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/Basic/SourceManager.h"
++
++#include "TransformationManager.h"
++
++using namespace clang;
++
++static const char *DescriptionMsg =
++"Remove catch blocks and if not present the try block as well. \n";
++
++static RegisterTransformation<RemoveTryCatch>
++         Trans("remove-try-catch", DescriptionMsg);
++
++class RemoveTryCatchAnalysisVisitor : public
++  RecursiveASTVisitor<RemoveTryCatchAnalysisVisitor> {
++public:
++
++  explicit RemoveTryCatchAnalysisVisitor(RemoveTryCatch *Instance)
++    : ConsumerInstance(Instance)
++  { }
++
++  bool VisitCXXTryStmt(CXXTryStmt *CTS);
++
++private:
++
++  RemoveTryCatch *ConsumerInstance;
++};
++
++bool RemoveTryCatchAnalysisVisitor::VisitCXXTryStmt(
++       CXXTryStmt *CTS)
++{
++  if (ConsumerInstance->isInIncludedFile(CTS)) {
++    return true;
++  }
++
++  // Count try block
++  ++ConsumerInstance->ValidInstanceNum;
++
++  if (ConsumerInstance->TransformationCounter <
++      ConsumerInstance->ValidInstanceNum) {
++    return true;
++  }
++
++  // Count all catch blocks
++  ConsumerInstance->ValidInstanceNum += CTS->getNumHandlers();
++
++  if (ConsumerInstance->TransformationCounter >
++      ConsumerInstance->ValidInstanceNum) {
++    return true;
++  }
++
++  // If no catch blocks are left remove the try
++  // else delete the specified catch block
++  if (ConsumerInstance->TransformationCounter ==
++      ConsumerInstance->ValidInstanceNum) {
++    ConsumerInstance->TheTryCatchStmt = CTS;
++  } else {
++    int CatchIdx = ConsumerInstance->ValidInstanceNum -
++      ConsumerInstance->TransformationCounter - 1;
++    ConsumerInstance->TheTryCatchStmt = CTS->getHandler(CatchIdx);
++  }
++
++  return true;
++}
++
++void RemoveTryCatch::Initialize(ASTContext &context)
++{
++  Transformation::Initialize(context);
++  AnalysisVisitor = new RemoveTryCatchAnalysisVisitor(this);
++}
++
++void RemoveTryCatch::HandleTranslationUnit(ASTContext &Ctx)
++{
++  AnalysisVisitor->TraverseDecl(Ctx.getTranslationUnitDecl());
++
++  if (QueryInstanceOnly)
++    return;
++
++  if (TransformationCounter > ValidInstanceNum) {
++    TransError = TransMaxInstanceError;
++    return;
++  }
++
++  Ctx.getDiagnostics().setSuppressAllDiagnostics(false);
++
++  TransAssert(TheTryCatchStmt && "NULL TheTryCatchStmt!");
++
++  removeStmt();
++
++  if (Ctx.getDiagnostics().hasErrorOccurred() ||
++      Ctx.getDiagnostics().hasFatalErrorOccurred())
++    TransError = TransInternalError;
++}
++
++void RemoveTryCatch::removeStmt()
++{
++  SourceManager &SrcManager = TheRewriter.getSourceMgr();
++  SourceRange Range = TheTryCatchStmt->getSourceRange();
++  TheRewriter.RemoveText(Range);
++}
++
++RemoveTryCatch::~RemoveTryCatch()
++{
++  delete AnalysisVisitor;
++}
+diff --git a/clang_delta/RemoveTryCatch.h b/clang_delta/RemoveTryCatch.h
+new file mode 100644
+index 00000000..027be900
+--- /dev/null
++++ b/clang_delta/RemoveTryCatch.h
+@@ -0,0 +1,57 @@
++//===----------------------------------------------------------------------===//
++//
++// Copyright (c) 2012 The University of Utah
++// Copyright (c) 2012 Konstantin Tokarev <annulen@yandex.ru>
++// All rights reserved.
++//
++// This file is distributed under the University of Illinois Open Source
++// License.  See the file COPYING for details.
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef REMOVE_TRY_CATCH_H
++#define REMOVE_TRY_CATCH_H
++
++#include <string>
++#include "llvm/ADT/DenseMap.h"
++#include "Transformation.h"
++
++namespace clang {
++  class Stmt;
++}
++
++class RemoveTryCatchAnalysisVisitor;
++
++class RemoveTryCatch : public Transformation {
++friend class RemoveTryCatchAnalysisVisitor;
++
++public:
++
++  RemoveTryCatch(const char *TransName, const char *Desc)
++    : Transformation(TransName, Desc),
++      AnalysisVisitor(0),
++      TheTryCatchStmt(0)
++  { }
++
++  ~RemoveTryCatch();
++
++private:
++
++  virtual void Initialize(clang::ASTContext &context);
++
++  virtual void HandleTranslationUnit(clang::ASTContext &Ctx);
++
++  void removeStmt();
++
++  RemoveTryCatchAnalysisVisitor *AnalysisVisitor;
++
++  clang::Stmt *TheTryCatchStmt;
++
++  // Unimplemented
++  RemoveTryCatch();
++
++  RemoveTryCatch(const RemoveTryCatch &);
++
++  void operator=(const RemoveTryCatch &);
++};
++#endif
+
+From 809b109056e2d8edd3c8fa8ce4d8c586780b8a68 Mon Sep 17 00:00:00 2001
+From: Moritz Pflanzer <moritz@pflanzer.eu>
+Date: Thu, 15 Mar 2018 10:35:21 +0100
+Subject: [PATCH 2/3] Handle removal of last catch block
+
+---
+ clang_delta/RemoveTryCatch.cpp | 36 ++++++++++++++++++++++------------
+ clang_delta/RemoveTryCatch.h   |  2 ++
+ 2 files changed, 26 insertions(+), 12 deletions(-)
+
+diff --git a/clang_delta/RemoveTryCatch.cpp b/clang_delta/RemoveTryCatch.cpp
+index d4655eed..28cf3681 100644
+--- a/clang_delta/RemoveTryCatch.cpp
++++ b/clang_delta/RemoveTryCatch.cpp
+@@ -55,28 +55,37 @@ bool RemoveTryCatchAnalysisVisitor::VisitCXXTryStmt(
+   // Count try block
+   ++ConsumerInstance->ValidInstanceNum;
+ 
+-  if (ConsumerInstance->TransformationCounter <
++  if (ConsumerInstance->TransformationCounter ==
+       ConsumerInstance->ValidInstanceNum) {
+-    return true;
++    ConsumerInstance->TheTryCatchStmt = CTS;
+   }
+ 
++  int TmpInstanceNum = ConsumerInstance->ValidInstanceNum;
++
+   // Count all catch blocks
+   ConsumerInstance->ValidInstanceNum += CTS->getNumHandlers();
+ 
++  // Early exit if the transformation counter is less than the index of any
++  // catch block
++  if (ConsumerInstance->TransformationCounter <= TmpInstanceNum) {
++    return true;
++  }
++
++  // Early exit if the transformation counter is higher than the index of any
++  // catch block
+   if (ConsumerInstance->TransformationCounter >
+       ConsumerInstance->ValidInstanceNum) {
+     return true;
+   }
+ 
+-  // If no catch blocks are left remove the try
+-  // else delete the specified catch block
+-  if (ConsumerInstance->TransformationCounter ==
+-      ConsumerInstance->ValidInstanceNum) {
+-    ConsumerInstance->TheTryCatchStmt = CTS;
+-  } else {
+-    int CatchIdx = ConsumerInstance->ValidInstanceNum -
+-      ConsumerInstance->TransformationCounter - 1;
+-    ConsumerInstance->TheTryCatchStmt = CTS->getHandler(CatchIdx);
++  TransAssert(ConsumerInstance->TransformationCounter > TmpInstanceNum);
++
++  int CatchIdx = ConsumerInstance->TransformationCounter - TmpInstanceNum - 1;
++  ConsumerInstance->TheTryCatchStmt = CTS->getHandler(CatchIdx);
++
++  // If the last catch block is removed the "try" has to be removed as well
++  if (CTS->getNumHandlers() == 1) {
++    ConsumerInstance->RewriteTryStmt = CTS;
+   }
+ 
+   return true;
+@@ -113,9 +122,12 @@ void RemoveTryCatch::HandleTranslationUnit(ASTContext &Ctx)
+ 
+ void RemoveTryCatch::removeStmt()
+ {
+-  SourceManager &SrcManager = TheRewriter.getSourceMgr();
+   SourceRange Range = TheTryCatchStmt->getSourceRange();
+   TheRewriter.RemoveText(Range);
++
++  if (RewriteTryStmt != nullptr) {
++    TheRewriter.RemoveText(RewriteTryStmt->getLocStart(), 3);
++  }
+ }
+ 
+ RemoveTryCatch::~RemoveTryCatch()
+diff --git a/clang_delta/RemoveTryCatch.h b/clang_delta/RemoveTryCatch.h
+index 027be900..ac85b3ba 100644
+--- a/clang_delta/RemoveTryCatch.h
++++ b/clang_delta/RemoveTryCatch.h
+@@ -30,6 +30,7 @@ friend class RemoveTryCatchAnalysisVisitor;
+   RemoveTryCatch(const char *TransName, const char *Desc)
+     : Transformation(TransName, Desc),
+       AnalysisVisitor(0),
++      RewriteTryStmt(0),
+       TheTryCatchStmt(0)
+   { }
+ 
+@@ -45,6 +46,7 @@ friend class RemoveTryCatchAnalysisVisitor;
+ 
+   RemoveTryCatchAnalysisVisitor *AnalysisVisitor;
+ 
++  clang::Stmt *RewriteTryStmt;
+   clang::Stmt *TheTryCatchStmt;
+ 
+   // Unimplemented
+
+From 435cbc4019424ae5aa17ee86859b311d6a5b34af Mon Sep 17 00:00:00 2001
+From: Moritz Pflanzer <moritz@pflanzer.eu>
+Date: Thu, 15 Mar 2018 10:37:17 +0100
+Subject: [PATCH 3/3] Add new pass to creduce
+
+---
+ creduce/creduce.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/creduce/creduce.in b/creduce/creduce.in
+index f7597ee8..4654661f 100644
+--- a/creduce/creduce.in
++++ b/creduce/creduce.in
+@@ -851,6 +851,7 @@ my @all_methods = (
+     { "name" => "pass_clang",    "arg" => "replace-dependent-name", "pri" => 257, "C" => 1,  },
+     { "name" => "pass_clang",    "arg" => "simplify-recursive-template-instantiation",       "pri" => 258, "C" => 1, },
+     { "name" => "pass_clang",    "arg" => "vector-to-array",        "pri" => 259, "C" => 1,   },
++    { "name" => "pass_clang",    "arg" => "remove-try-catch",        "pri" => 260, "C" => 1,   },
+     { "name" => "pass_clang",    "arg" => "combine-global-var",                    "last_pass_pri" => 990, "C" => 1, },
+     { "name" => "pass_clang",    "arg" => "combine-local-var",                     "last_pass_pri" => 991, "C" => 1, },
+     { "name" => "pass_clang",    "arg" => "simplify-struct-union-decl",            "last_pass_pri" => 992, "C" => 1, },

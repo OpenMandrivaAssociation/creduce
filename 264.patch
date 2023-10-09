@@ -1,0 +1,22 @@
+From aa5780939c46839615f1295f542f808d4c83989d Mon Sep 17 00:00:00 2001
+From: Matheus Izvekov <mizvekov@gmail.com>
+Date: Wed, 27 Sep 2023 16:32:47 +0200
+Subject: [PATCH] Port to LLVM 17.0
+
+---
+ clang_delta/RemoveUnusedStructField.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/clang_delta/RemoveUnusedStructField.cpp b/clang_delta/RemoveUnusedStructField.cpp
+index 44b596f1..5e7aba10 100644
+--- a/clang_delta/RemoveUnusedStructField.cpp
++++ b/clang_delta/RemoveUnusedStructField.cpp
+@@ -247,7 +247,7 @@ const Expr *RemoveUnusedStructField::getInitExprFromDesignatedInitExpr(
+       }
+       else {
+         const DesignatedInitExpr::Designator *DS = DIE->getDesignator(0);
+-        const FieldDecl *CurrFD = DS->getField();
++        const FieldDecl *CurrFD = DS->getFieldDecl();
+         if ((CurrFD && FD == CurrFD) ||
+             (CurrFD == NULL && DS->getFieldName() == FD->getIdentifier())) {
+           IsFirstField = (I == 0);
