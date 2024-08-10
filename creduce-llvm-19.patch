@@ -1,0 +1,96 @@
+diff -up creduce-master/clang_delta/ExpressionDetector.cpp.omv~ creduce-master/clang_delta/ExpressionDetector.cpp
+--- creduce-master/clang_delta/ExpressionDetector.cpp.omv~	2024-08-10 16:29:47.838527615 +0200
++++ creduce-master/clang_delta/ExpressionDetector.cpp	2024-08-10 16:31:42.959817210 +0200
+@@ -64,7 +64,7 @@ public:
+                           StringRef FileName, bool IsAngled,
+                           CharSourceRange FilenameRange, OptionalFileEntryRef File,
+                           StringRef SearchPath, StringRef RelativePath,
+-                          const Module *Imported,
++                          const Module *Imported, bool ModuleImported,
+                           SrcMgr::CharacteristicKind FileType) override;
+ 
+ private:
+@@ -85,7 +85,7 @@ void IncludesPPCallbacks::InclusionDirec
+                                              OptionalFileEntryRef /*File*/,
+                                              StringRef /*SearchPath*/,
+                                              StringRef /*RelativePath*/,
+-                                             const Module * /*Imported*/,
++                                             const Module * /*Imported*/, bool /* ModuleImported*/,
+                                              SrcMgr::CharacteristicKind /*FileType*/)
+ {
+   if (!SrcManager.isInMainFile(HashLoc))
+@@ -118,7 +118,7 @@ bool LocalTmpVarCollector::VisitDeclRefE
+   const VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl());
+   if (!VD)
+     return true;
+-  if (VD->getName().startswith(Prefix))
++  if (VD->getName().starts_with(Prefix))
+     TmpVars.push_back(VD);
+   return true;
+ }
+@@ -363,7 +363,7 @@ void ExpressionDetector::addOneTempVar(c
+ {
+   if (!VD)
+     return;
+-  if (!VD->getName().startswith(TmpVarNamePrefix))
++  if (!VD->getName().starts_with(TmpVarNamePrefix))
+     return;
+   if (const Expr *E = VD->getInit())
+     ProcessedExprs[VD] = E->IgnoreParenImpCasts();
+@@ -374,9 +374,9 @@ bool ExpressionDetector::refToTmpVar(con
+   StringRef Name = ND->getName();
+   // We don't want to repeatly replace temporary variables
+   // __creduce_expr_tmp_xxx, __creduce_printed_yy and __creduce_checked_zzz.
+-  return Name.startswith(TmpVarNamePrefix) ||
+-         Name.startswith(PrintedVarNamePrefix) ||
+-         Name.startswith(CheckedVarNamePrefix);
++  return Name.starts_with(TmpVarNamePrefix) ||
++         Name.starts_with(PrintedVarNamePrefix) ||
++         Name.starts_with(CheckedVarNamePrefix);
+ }
+ 
+ // Reference: IdenticalExprChecker.cpp from Clang
+@@ -524,8 +524,8 @@ bool ExpressionDetector::isValidExpr(Stm
+       if (const DeclRefExpr *SubE =
+           dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreParenCasts())) {
+         StringRef SubEName = SubE->getDecl()->getName();
+-        if (SubEName.startswith(PrintedVarNamePrefix) ||
+-            SubEName.startswith(CheckedVarNamePrefix))
++        if (SubEName.starts_with(PrintedVarNamePrefix) ||
++            SubEName.starts_with(CheckedVarNamePrefix))
+           return false;
+       }
+     }
+@@ -541,7 +541,7 @@ bool ExpressionDetector::isValidExpr(Stm
+       bool IsLit = SC == Stmt::IntegerLiteralClass ||
+                    SC == Stmt::FloatingLiteralClass;
+       if (IsLit && DRE &&
+-          DRE->getDecl()->getName().startswith(TmpVarNamePrefix) &&
++          DRE->getDecl()->getName().starts_with(TmpVarNamePrefix) &&
+           S->getStmtClass() == Stmt::IfStmtClass) {
+         return false;
+       }
+diff -up creduce-master/clang_delta/RemoveNamespace.cpp.omv~ creduce-master/clang_delta/RemoveNamespace.cpp
+--- creduce-master/clang_delta/RemoveNamespace.cpp.omv~	2024-08-10 17:01:05.637087314 +0200
++++ creduce-master/clang_delta/RemoveNamespace.cpp	2024-08-10 17:01:10.637145674 +0200
+@@ -944,7 +944,7 @@ void RemoveNamespace::handleOneNamedDecl
+     TransAssert(IdInfo && "Invalid IdentifierInfo!");
+     NewName += IdInfo->getName();
+     // Make sure we have valid suffix for user literals
+-    if (IsUserLiteral && IdInfo->getName().startswith("_")) {
++    if (IsUserLiteral && IdInfo->getName().starts_with("_")) {
+       NewName = "_" + NewName;
+     }
+     NamedDeclToNewName[ND] = NewName;
+diff -up creduce-master/clang_delta/RenameCXXMethod.cpp.omv~ creduce-master/clang_delta/RenameCXXMethod.cpp
+--- creduce-master/clang_delta/RenameCXXMethod.cpp.omv~	2024-08-10 17:04:47.011660583 +0200
++++ creduce-master/clang_delta/RenameCXXMethod.cpp	2024-08-10 17:05:56.192461044 +0200
+@@ -426,7 +426,7 @@ bool RenameCXXMethod::isValidName(const
+ {
+   size_t PrefixLen = MethodNamePrefix.length();
+   StringRef NamePrefix = Name.substr(0, PrefixLen);
+-  if (!NamePrefix.equals(MethodNamePrefix))
++  if (NamePrefix.compare(MethodNamePrefix) != 0)
+     return false;
+   llvm::APInt Num;
+   return !Name.drop_front(PrefixLen).getAsInteger(10, Num);
