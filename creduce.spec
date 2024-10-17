@@ -14,7 +14,7 @@ Patch1: https://github.com/csmith-project/creduce/pull/157.patch
 Patch2: creduce-llvm-19.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
-URL: http://embed.cs.utah.edu/creduce/
+URL: https://embed.cs.utah.edu/creduce/
 License: BSD
 Group: Development/Tools
 BuildRequires: llvm-devel
