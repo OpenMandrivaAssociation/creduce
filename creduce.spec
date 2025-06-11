@@ -3,7 +3,7 @@
 Name: creduce
 Version: 2.11.1
 %if 0%{git}
-Release: 0.%{git}.1
+Release: 0.%{git}.2
 Source0: https://github.com/csmith-project/creduce/archive/master/%{name}-%{git}.tar.gz
 %else
 Release: 1
@@ -12,6 +12,7 @@ Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 # New pass for dealing with exceptions
 Patch1: https://github.com/csmith-project/creduce/pull/157.patch
 Patch2: creduce-llvm-19.patch
+Patch3: creduce-llvm-20.patch
 Summary: Tool for creating reduced test cases for compiler bugs
 # https://github.com/csmith-project/creduce
 URL: https://embed.cs.utah.edu/creduce/

@@ -1,0 +1,28 @@
+diff -up creduce-master/clang_delta/Transformation.cpp.omv~ creduce-master/clang_delta/Transformation.cpp
+--- creduce-master/clang_delta/Transformation.cpp.omv~	2025-06-11 14:59:51.877389706 +0200
++++ creduce-master/clang_delta/Transformation.cpp	2025-06-11 14:59:58.316487918 +0200
+@@ -95,7 +95,7 @@ void Transformation::Initialize(ASTConte
+ void Transformation::outputTransformedSource(llvm::raw_ostream &OutStream)
+ {
+   FileID MainFileID = SrcManager->getMainFileID();
+-  const RewriteBuffer *RWBuf = TheRewriter.getRewriteBufferFor(MainFileID);
++  const llvm::RewriteBuffer *RWBuf = TheRewriter.getRewriteBufferFor(MainFileID);
+ 
+   // RWBuf is non-empty upon any rewrites
+   TransAssert(RWBuf && "Empty RewriteBuffer!");
+diff -up creduce-master/clang_delta/TransformationManager.cpp.omv~ creduce-master/clang_delta/TransformationManager.cpp
+--- creduce-master/clang_delta/TransformationManager.cpp.omv~	2025-06-11 15:01:28.565373316 +0200
++++ creduce-master/clang_delta/TransformationManager.cpp	2025-06-11 15:08:46.358342171 +0200
+@@ -91,7 +91,11 @@ bool TransformationManager::initializeCo
+   ClangInstance = new CompilerInstance();
+   assert(ClangInstance);
+   
+-  ClangInstance->createDiagnostics();
++  ClangInstance->createDiagnostics(
++#if LLVM_VERSION_MAJOR >= 20
++    *llvm::vfs::getRealFileSystem()    
++#endif
++  );
+ 
+   TargetOptions &TargetOpts = ClangInstance->getTargetOpts();
+   PreprocessorOptions &PPOpts = ClangInstance->getPreprocessorOpts();
