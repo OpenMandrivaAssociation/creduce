@@ -6,7 +6,7 @@ Version: 2.11.1
 Release: 0.%{git}.2
 Source0: https://github.com/csmith-project/creduce/archive/master/%{name}-%{git}.tar.gz
 %else
-Release: 1
+Release: 2
 Source0: http://embed.cs.utah.edu/creduce/%{name}-%{version}.tar.gz
 %endif
 # New pass for dealing with exceptions
