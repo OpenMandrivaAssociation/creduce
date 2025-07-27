@@ -1,0 +1,89 @@
+diff -up creduce-master/clang_delta/CommonRenameClassRewriteVisitor.h.omv~ creduce-master/clang_delta/CommonRenameClassRewriteVisitor.h
+--- creduce-master/clang_delta/CommonRenameClassRewriteVisitor.h.omv~	2025-07-27 20:29:10.276140484 +0200
++++ creduce-master/clang_delta/CommonRenameClassRewriteVisitor.h	2025-07-27 20:30:05.164643410 +0200
+@@ -310,7 +310,7 @@ template<typename T> bool CommonRenameCl
+     dyn_cast<DependentTemplateSpecializationType>(Ty);
+   TransAssert(DTST && "Bad DependentTemplateSpecializationType!");
+ 
+-  const IdentifierInfo *IdInfo = DTST->getIdentifier();
++  const IdentifierInfo *IdInfo = DTST->getDependentTemplateName().getName().getIdentifier();
+   std::string IdName = IdInfo->getName().str();
+   std::string Name;
+   if (getNewNameByName(IdName, Name)) {
+diff -up creduce-master/clang_delta/RemoveNamespace.cpp.omv~ creduce-master/clang_delta/RemoveNamespace.cpp
+--- creduce-master/clang_delta/RemoveNamespace.cpp.omv~	2025-07-27 20:30:41.810980867 +0200
++++ creduce-master/clang_delta/RemoveNamespace.cpp	2025-07-27 20:31:28.463155473 +0200
+@@ -440,7 +440,7 @@ bool RemoveNamespaceRewriteVisitor::Visi
+     dyn_cast<DependentTemplateSpecializationType>(Ty);
+   TransAssert(DTST && "Bad DependentTemplateSpecializationType!");
+ 
+-  const IdentifierInfo *IdInfo = DTST->getIdentifier();
++  const IdentifierInfo *IdInfo = DTST->getDependentTemplateName().getName().getIdentifier();
+   std::string IdName = IdInfo->getName().str();
+   std::string Name;
+ 
+@@ -563,7 +563,6 @@ bool RemoveNamespaceRewriteVisitor::Trav
+         break;
+       }
+       case NestedNameSpecifier::TypeSpec: // Fall-through
+-      case NestedNameSpecifier::TypeSpecWithTemplate:
+         TraverseTypeLoc(Loc.getTypeLoc());
+         break;
+       default:
+diff -up creduce-master/clang_delta/RemoveUnusedFunction.cpp.omv~ creduce-master/clang_delta/RemoveUnusedFunction.cpp
+--- creduce-master/clang_delta/RemoveUnusedFunction.cpp.omv~	2025-07-27 20:32:19.444445504 +0200
++++ creduce-master/clang_delta/RemoveUnusedFunction.cpp	2025-07-27 20:32:25.423222224 +0200
+@@ -254,7 +254,7 @@ bool RUFAnalysisVisitor::VisitFunctionDe
+ 
+   if (FD->isReferenced() ||
+       FD->isMain() ||
+-      FD->hasAttr<OpenCLKernelAttr>() ||
++      FD->hasAttr<DeviceKernelAttr>() ||
+       ConsumerInstance->hasReferencedSpecialization(CanonicalFD) ||
+       ConsumerInstance->isInlinedSystemFunction(CanonicalFD) ||
+       ConsumerInstance->isInReferencedSet(CanonicalFD) ||
+diff -up creduce-master/clang_delta/RenameFun.cpp.omv~ creduce-master/clang_delta/RenameFun.cpp
+--- creduce-master/clang_delta/RenameFun.cpp.omv~	2025-07-27 20:34:13.348979481 +0200
++++ creduce-master/clang_delta/RenameFun.cpp	2025-07-27 20:34:31.440617145 +0200
+@@ -261,7 +261,7 @@ void RenameFun::addFun(const FunctionDec
+ {
+   std::string Name = FD->getNameAsString();
+   // Skip special functions
+-  if (isSpecialFun(Name) || FD->hasAttr<OpenCLKernelAttr>())
++  if (isSpecialFun(Name) || FD->hasAttr<DeviceKernelAttr>())
+     FunToNameMap[FD] = Name;
+ 
+   if (FunToNameMap.find(FD) != FunToNameMap.end())
+diff -up creduce-master/clang_delta/Transformation.cpp.omv~ creduce-master/clang_delta/Transformation.cpp
+--- creduce-master/clang_delta/Transformation.cpp.omv~	2025-07-27 20:42:30.171002650 +0200
++++ creduce-master/clang_delta/Transformation.cpp	2025-07-27 20:42:41.564860201 +0200
+@@ -636,7 +636,7 @@ const DeclContext *Transformation::getDe
+         return NAD->getNamespace()->getCanonicalDecl();
+       }
+       case NestedNameSpecifier::TypeSpec: // Fall-through
+-      case NestedNameSpecifier::TypeSpecWithTemplate: {
++      {
+         const Type *Ty = NNS->getAsType();
+         if (const RecordType *RT = Ty->getAs<RecordType>())
+           return RT->getDecl();
+diff -up creduce-master/clang_delta/TransformationManager.cpp.omv~ creduce-master/clang_delta/TransformationManager.cpp
+--- creduce-master/clang_delta/TransformationManager.cpp.omv~	2025-07-27 20:43:36.039415527 +0200
++++ creduce-master/clang_delta/TransformationManager.cpp	2025-07-27 20:44:11.945072153 +0200
+@@ -129,7 +129,7 @@ bool TransformationManager::initializeCo
+     ClangInstance->createFileManager();
+ 
+     if(CLCPath != NULL && ClangInstance->hasFileManager() &&
+-       ClangInstance->getFileManager().getDirectory(CLCPath, false)) {
++       ClangInstance->getFileManager().getDirectoryRef(CLCPath, false)) {
+         Args.push_back("-I");
+         Args.push_back(CLCPath);
+     }
+@@ -151,7 +151,7 @@ bool TransformationManager::initializeCo
+ 
+   TargetInfo *Target = 
+     TargetInfo::CreateTargetInfo(ClangInstance->getDiagnostics(),
+-                                 ClangInstance->getInvocation().TargetOpts);
++                                 ClangInstance->getInvocation().getTargetOpts());
+   ClangInstance->setTarget(Target);
+ 
+   if (const char *env = getenv("CREDUCE_INCLUDE_PATH")) {
